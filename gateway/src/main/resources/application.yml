@@ -1,0 +1,36 @@
+#server:
+#  port: 8888
+#spring:
+#  application:
+#    name: gateway
+#  redis:
+#    host: 118.24.101.162
+#    port: 6379
+#    password: wojide060329@
+#  cloud:
+#    gateway:
+#      routes:
+#        - id: auth
+#          uri: lb://auth
+#          predicates:
+#            - Path=/auth/**
+#          filters:
+#            - name: RequestRateLimiter
+#              args:
+#                key-resolver: '#{@keyResolver}'
+#                redis-rate-limiter.replenishRate: 10 # 令牌桶每秒填充平均速率,即允许用户每秒处理多少个请求平均数
+#                redis-rate-limiter.burstCapacity: 100 # 令牌桶的容量，允许在一秒钟内完成的最大请求数
+#        - id: message
+#          uri: lb://message
+#          predicates:
+#            - Path=/message/**
+#          filters:
+#            - name: RequestRateLimiter
+#              args:
+#                key-resolver: '#{@keyResolver}'
+#                redis-rate-limiter.replenishRate: 10 # 令牌桶每秒填充平均速率,即允许用户每秒处理多少个请求平均数
+#                redis-rate-limiter.burstCapacity: 100 # 令牌桶的容量，允许在一秒钟内完成的最大请求数
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: http://localhost:8761/eureka/

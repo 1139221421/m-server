@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: message
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: wojide060329@
+    url: jdbc:mysql://118.24.101.162:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=false
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      pool-name: DatebookHikariCP
+      connection-test-query: SELECT 1
+      auto-commit: true
+      max-lifetime: 1800000
+      minimum-idle: 5
+      maximum-pool-size: 15
+      connection-timeout: 30000
+      idle-timeout: 30000
+server:
+  port: 6667
+eureka:
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:8761/eureka/
+feign:
+  httpclient:
+    enabled: true
