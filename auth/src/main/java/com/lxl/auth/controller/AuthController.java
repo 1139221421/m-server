@@ -6,6 +6,8 @@ import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 public class AuthController implements ProducerDeal {
+    private final static Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     private MessageFeign messageFeign;
@@ -37,13 +40,13 @@ public class AuthController implements ProducerDeal {
     )
     @GetMapping("/test")
     public String test() {
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println("auth 访问...");
-        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
+//        try {
+//            Thread.sleep(2000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
+        logger.info("auth 访问...");
+//        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
         return messageFeign.test();
     }
 

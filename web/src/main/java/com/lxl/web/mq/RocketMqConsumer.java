@@ -2,6 +2,7 @@ package com.lxl.web.mq;
 
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.utils.common.SpringContextUtils;
+import com.lxl.utils.config.ConfUtil;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
@@ -29,19 +30,19 @@ public class RocketMqConsumer implements TransactionListener {
     /**
      * 消费组
      */
-    private static final String CONSUMER_GROUP_NAME = "lxl-consumer";
+    private static final String CONSUMER_GROUP_NAME = ConfUtil.getPropertyOrDefault("rocketmq-consumer", "lxl-consumer");
     /**
      * 生产者组
      */
-    private static final String PRODUCER_GROUP_NAME = "lxl-producer";
+    private static final String PRODUCER_GROUP_NAME = ConfUtil.getPropertyOrDefault("rocketmq-producer", "lxl-producer");
     /**
      * 主题topic
      */
-    private static final String TOPIC_NAME = "lxl";
+    private static final String TOPIC_NAME = ConfUtil.getPropertyOrDefault("rocketmq-topic", "lxl");
     /**
      * namesrv地址
      */
-    private static final String NAMES_ADDR = "118.24.101.162:9876";
+    private static final String NAMES_ADDR = ConfUtil.getPropertyOrDefault("rocketmq-addr", "localhost::9876");
 
     private final static Logger logger = LoggerFactory.getLogger(RocketMqConsumer.class);
     private static final TransactionMQProducer PRODUCER = new TransactionMQProducer(PRODUCER_GROUP_NAME);
