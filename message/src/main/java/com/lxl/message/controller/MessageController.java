@@ -1,6 +1,7 @@
 package com.lxl.message.controller;
 
 import com.lxl.common.enums.MqTagsEnum;
+import com.lxl.common.vo.ResponseInfo;
 import com.lxl.web.mq.ConsumerDeal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,9 +15,9 @@ public class MessageController implements ConsumerDeal {
     private final static Logger logger = LoggerFactory.getLogger(MessageController.class);
 
     @GetMapping("/test")
-    private String test() {
+    private ResponseInfo test() {
         logger.info("messaage 调用...");
-        return "message";
+        return ResponseInfo.createSuccess("success");
     }
 
     @Override

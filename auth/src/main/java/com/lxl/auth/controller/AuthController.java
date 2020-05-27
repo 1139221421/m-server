@@ -2,8 +2,10 @@ package com.lxl.auth.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.feign.message.MessageFeign;
+import com.lxl.common.vo.ResponseInfo;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
 import com.lxl.web.utils.ExceptionUtil;
@@ -36,10 +38,10 @@ public class AuthController implements ProducerDeal {
      *
      * @return
      */
-    @SentinelResource(value = "test", blockHandler = "handleException", blockHandlerClass = ExceptionUtil.class)
-//    @SentinelResource(value = "test", blockHandler = "handleException")
+//    @SentinelResource(value = "test", blockHandler = "handleException", blockHandlerClass = ExceptionUtil.class)
+    @SentinelResource(value = "test", blockHandler = "handleException")
     @GetMapping("/test")
-    public String test() {
+    public ResponseInfo test() {
         logger.info("auth 访问...");
 //        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
         return messageFeign.test();
@@ -51,9 +53,9 @@ public class AuthController implements ProducerDeal {
      * @param ex
      * @return
      */
-    public String handleException(BlockException ex) {
-        ex.printStackTrace();
-        return "坚持不住了。。。";
+    public ResponseInfo handleException(BlockException ex) {
+        logger.error("限流异常：", ex);
+        return ResponseInfo.createCodeEnum(CodeEnum.FLOW_ERROR).setMessage("哎呀，坚持不住了...");
     }
 
     @Override
