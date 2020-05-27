@@ -71,5 +71,6 @@ public class AuthController implements ProducerDeal {
         // 模拟成功
         return true;
     }
+
 }
 

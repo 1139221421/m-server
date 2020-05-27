@@ -5,6 +5,7 @@
     "count": 1,
     "grade": 1,
     "limitApp": "default",
-    "strategy": 0
+    "strategy": 0,
+    "clusterMode": false
   }
 ]
