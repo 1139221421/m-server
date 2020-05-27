@@ -2,7 +2,8 @@ package com.lxl.common.enums;
 
 @SuppressWarnings("ALL")
 public enum MqTagsEnum {
-    TEST("TEST", "测试");
+    TEST("TEST", "测试"),
+    WEBSOCKET_MSG("WEBSOCKET_MSG", "websocket消息");
 
     private String tagName;
 

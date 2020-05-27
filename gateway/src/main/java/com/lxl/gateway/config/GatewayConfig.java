@@ -32,6 +32,8 @@ public class GatewayConfig {
         return builder.routes()
                 .route(r -> r.path("/auth/**").uri("lb://auth"))
                 .route(r -> r.path("/message/**").uri("lb://message"))
+                // websocket集成
+                .route(r -> r.path("/websocket/**").uri("lb:ws://message"))
                 .build();
     }
 

@@ -12,6 +12,7 @@ import org.apache.rocketmq.client.producer.TransactionListener;
 import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ public class RocketMqConsumer implements TransactionListener {
      * 消费组
      */
     private static final String CONSUMER_GROUP_NAME = ConfUtil.getPropertyOrDefault("rocketmq-consumer", "lxl-consumer");
+    private static final String BROADCASY_GROUP_NAME = ConfUtil.getPropertyOrDefault("rocketmq-consumer", "lxl-consumer") + "-broadcast";
     /**
      * 生产者组
      */
@@ -39,6 +41,7 @@ public class RocketMqConsumer implements TransactionListener {
      * 主题topic
      */
     private static final String TOPIC_NAME = ConfUtil.getPropertyOrDefault("rocketmq-topic", "lxl");
+    private static final String BROADCASY_TOPIC_NAME = ConfUtil.getPropertyOrDefault("rocketmq-topic", "lxl") + "-broadcast";
     /**
      * namesrv地址
      */
@@ -47,15 +50,23 @@ public class RocketMqConsumer implements TransactionListener {
     private final static Logger logger = LoggerFactory.getLogger(RocketMqConsumer.class);
     private static final TransactionMQProducer PRODUCER = new TransactionMQProducer(PRODUCER_GROUP_NAME);
     private static final DefaultMQPushConsumer CONSUMER = new DefaultMQPushConsumer(CONSUMER_GROUP_NAME);
+    private static final DefaultMQPushConsumer BROADCAST_CONSUMER = new DefaultMQPushConsumer(BROADCASY_GROUP_NAME);
 
     @PostConstruct
     public void afterPropertiesSet() throws Exception {
         logger.info("rocketmq starting ...");
         //启动消费者 添加消费者监听
-        CONSUMER.subscribe(TOPIC_NAME, "*");
         CONSUMER.setNamesrvAddr(NAMES_ADDR);
+        CONSUMER.subscribe(TOPIC_NAME, "*");
         CONSUMER.setMessageListener((MessageListenerConcurrently) this::consumeMessage);
         CONSUMER.start();
+
+        //启动广播消费者
+        BROADCAST_CONSUMER.setNamesrvAddr(NAMES_ADDR);
+        BROADCAST_CONSUMER.setMessageModel(MessageModel.BROADCASTING);
+        BROADCAST_CONSUMER.subscribe(BROADCASY_TOPIC_NAME, "*");
+        BROADCAST_CONSUMER.setMessageListener((MessageListenerConcurrently) this::consumeMessage);
+        BROADCAST_CONSUMER.start();
 
         //启动生产者 启动事务监听
         PRODUCER.setNamesrvAddr(NAMES_ADDR);
@@ -69,14 +80,19 @@ public class RocketMqConsumer implements TransactionListener {
      *
      * @param msg
      * @param tag
-     * @param isDefault
+     * @param isDefault      是否普通消息 true：普通消息  false：事务消息
      * @param delayTimeLevel 默认1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
+     * @param isBroadcast    是否广播模式 true：广播
      * @return
      */
-    public boolean sendMsg(String msg, MqTagsEnum tag, boolean isDefault, Integer delayTimeLevel) {
+    public boolean sendMsg(String msg, MqTagsEnum tag, boolean isDefault, Integer delayTimeLevel, boolean isBroadcast) {
         try {
+            String topicName = TOPIC_NAME;
+            if (isBroadcast) {
+                topicName = BROADCASY_TOPIC_NAME;
+            }
             logger.info("发送消息信息：{},tag：{}", msg, tag);
-            Message message = new Message(TOPIC_NAME, tag.getTagName(), msg.getBytes(RemotingHelper.DEFAULT_CHARSET));
+            Message message = new Message(topicName, tag.getTagName(), msg.getBytes(RemotingHelper.DEFAULT_CHARSET));
             if (isDefault) {
                 // 普通消息
                 if (delayTimeLevel != null) {
@@ -103,7 +119,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @return
      */
     public boolean sendMsg(String msg, MqTagsEnum tag) {
-        return sendMsg(msg, tag, true, null);
+        return sendMsg(msg, tag, true, null, false);
     }
 
     /**
@@ -115,7 +131,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @return
      */
     public boolean sendMsg(String msg, MqTagsEnum tag, Integer delayTimeLevel) {
-        return sendMsg(msg, tag, true, delayTimeLevel);
+        return sendMsg(msg, tag, true, delayTimeLevel, false);
     }
 
     /**
@@ -126,7 +142,18 @@ public class RocketMqConsumer implements TransactionListener {
      * @return
      */
     public boolean sendTransactionMsg(String msg, MqTagsEnum tag) {
-        return sendMsg(msg, tag, false, null);
+        return sendMsg(msg, tag, false, null, false);
+    }
+
+    /**
+     * 广播
+     *
+     * @param msg
+     * @param tag
+     * @return
+     */
+    public boolean sendBroadcastMsg(String msg, MqTagsEnum tag) {
+        return sendMsg(msg, tag, true, null, true);
     }
 
     /**
