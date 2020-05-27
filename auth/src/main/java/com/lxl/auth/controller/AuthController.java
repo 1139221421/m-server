@@ -8,7 +8,6 @@ import com.lxl.common.feign.message.MessageFeign;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
-import com.lxl.web.utils.ExceptionUtil;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import org.slf4j.Logger;
@@ -40,11 +39,21 @@ public class AuthController implements ProducerDeal {
      */
 //    @SentinelResource(value = "test", blockHandler = "handleException", blockHandlerClass = ExceptionUtil.class)
     @SentinelResource(value = "test", blockHandler = "handleException")
+    @HystrixCommand(commandKey = "test", groupKey = "testGroup",
+            commandProperties = {
+                    @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "3000")
+            })
     @GetMapping("/test")
     public ResponseInfo test() {
+//        try {
+//            Thread.sleep(4000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
         logger.info("auth 访问...");
 //        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
-        return messageFeign.test();
+//        return messageFeign.test();
+        return ResponseInfo.createSuccess();
     }
 
     /**

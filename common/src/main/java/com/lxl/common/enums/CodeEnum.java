@@ -13,7 +13,8 @@ public enum CodeEnum {
     FLOW_ERROR("1000", "服务器繁忙，请稍后重试"),
     NOT_LOGIN("1001", "未登录系统"),
     PARAM_ERROR("1002", "参数错误"),
-    NO_PERMISSION("1003", "权限不足");
+    NO_PERMISSION("1003", "权限不足"),
+    TIME_OUT("1010", "服务器超时，请重试");
 
     public String code;
     public String message;

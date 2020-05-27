@@ -2,6 +2,8 @@ package com.lxl.web.handler;
 
 import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.vo.ResponseInfo;
+import com.netflix.hystrix.exception.HystrixRuntimeException;
+import feign.RetryableException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +26,9 @@ public class GlobalExceptionHandler {
         if (e != null) {
             logger.error("", e);
             result.addData("error", e.getMessage());
-            if (StringUtils.isNotEmpty(e.getMessage()) && e.getMessage().length() < 20) {
+            if (e instanceof HystrixRuntimeException || e instanceof RetryableException) {
+                msg = CodeEnum.TIME_OUT.getMessage();
+            } else if (StringUtils.isNotEmpty(e.getMessage()) && e.getMessage().length() < 50) {
                 msg = e.getMessage();
             }
         }
