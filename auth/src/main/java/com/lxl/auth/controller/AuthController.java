@@ -6,6 +6,7 @@ import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.feign.message.MessageFeign;
 import com.lxl.common.vo.ResponseInfo;
+import com.lxl.web.annotations.Log;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
@@ -44,6 +45,7 @@ public class AuthController implements ProducerDeal {
                     @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "3000")
             })
     @GetMapping("/test")
+    @Log
     public ResponseInfo test() {
 //        try {
 //            Thread.sleep(4000);
