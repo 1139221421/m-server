@@ -26,6 +26,10 @@ public class AuthApplication {
         // 取消Sentinel控制台懒加载
         System.setProperty("spring.cloud.sentinel.eager", "true");
 
+        // 模拟disconf配置，方便测试
+        System.setProperty("logging.config", "classpath:logback.xml");
+        // 日志环境
+        System.setProperty("spring.profiles.active", "dev");
         ConfUtil.initAndSetProperties();
         SpringApplication.run(AuthApplication.class, args);
     }
