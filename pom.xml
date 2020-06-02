@@ -22,6 +22,7 @@
         <module>web</module>
         <module>auth</module>
         <module>message</module>
+        <module>log</module>
     </modules>
 
     <properties>
@@ -79,14 +80,5 @@
             </exclusions>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
