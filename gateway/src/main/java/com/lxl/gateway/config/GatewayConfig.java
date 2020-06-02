@@ -27,14 +27,24 @@ public class GatewayConfig {
 ////        return exchange -> Mono.just(exchange.getRequest().getPath().value());
 //    }
 
-    @Bean
-    public RouteLocator customerRouteLocator(RouteLocatorBuilder builder) {
-        return builder.routes()
-                .route(r -> r.path("/auth/**").uri("lb://auth"))
-                .route(r -> r.path("/message/**").uri("lb://message"))
-                // websocket集成
-                .route(r -> r.path("/websocket/**").uri("lb:ws://message"))
-                .build();
-    }
+    /**
+     * 路由设置（与yml效果相同）
+     * 默认路由规则(zk或者yml中配置了，这里就不要了)
+     * spring.cloud.gateway.discovery.locator.enabled=true
+     * 小写访问（之前访问/auth/test/ 配置后访问/auth/auth/test）
+     * spring.cloud.gateway.discovery.locator.lowerCaseServiceId=true
+     *
+     * @param builder
+     * @return
+     */
+//    @Bean
+//    public RouteLocator customerRouteLocator(RouteLocatorBuilder builder) {
+//        return builder.routes()
+//                .route(r -> r.path("/auth/**").uri("lb://auth"))
+//                .route(r -> r.path("/message/**").uri("lb://message"))
+//                // websocket集成
+//                .route(r -> r.path("/websocket/**").uri("lb:ws://message"))
+//                .build();
+//    }
 
 }
