@@ -12,6 +12,7 @@ import org.yeauty.pojo.Session;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 配置详解 https://github.com/YeautyYE/netty-websocket-spring-boot-starter/blob/master/README_zh.md
@@ -20,7 +21,10 @@ import java.util.Map;
 @ServerEndpoint(path = "/message/{arg}", port = "${netty-websocket.discovery.client.port}")
 @Component
 public class WebSocketServer1 {
+
     private final static Logger logger = LoggerFactory.getLogger(WebSocketServer1.class);
+
+    private static CopyOnWriteArraySet<WsSession> sessionSet = new CopyOnWriteArraySet<WsSession>();
 
     /**
      * 当有新的连接进入时，对该方法进行回调
@@ -53,6 +57,7 @@ public class WebSocketServer1 {
      */
     @OnOpen
     public void onOpen(Session session, HttpHeaders headers, @RequestParam String req, @RequestParam MultiValueMap reqMap, @PathVariable String arg, @PathVariable Map pathMap) {
+        sessionSet.add(new WsSession(session, Long.valueOf(arg)));
         logger.info("websocket:one connection established, reqMap:{},pathMap:{}", JSON.toJSONString(reqMap), JSON.toJSONString(pathMap));
     }
 
@@ -64,6 +69,7 @@ public class WebSocketServer1 {
      */
     @OnClose
     public void onClose(Session session) throws IOException {
+        sessionSet.remove(new WsSession(session));
         logger.info("websocket:one connection closed...");
     }
 
@@ -86,7 +92,7 @@ public class WebSocketServer1 {
      */
     @OnMessage
     public void onMessage(Session session, String message) {
-        logger.debug("websocket:received string message:{} ", message);
+        logger.info("websocket:received string message:{} ", message);
         session.sendText("Hello Netty!");
     }
 
@@ -98,7 +104,7 @@ public class WebSocketServer1 {
      */
     @OnBinary
     public void onBinary(Session session, byte[] bytes) {
-        logger.debug("websocket:received byte message:{} ", new String(bytes));
+        logger.info("websocket:received byte message:{} ", new String(bytes));
     }
 
     /**
