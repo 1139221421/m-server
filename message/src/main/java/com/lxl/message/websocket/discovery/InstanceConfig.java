@@ -9,11 +9,6 @@ import javax.management.Query;
 import java.lang.management.ManagementFactory;
 import java.util.Set;
 
-/**
- * Author: chrisliu
- * Date: 2019/2/21 17:13
- * Mail: gwarmdll@gmail.com
- */
 public class InstanceConfig extends MyDataCenterInstanceConfig {
 
     @Override

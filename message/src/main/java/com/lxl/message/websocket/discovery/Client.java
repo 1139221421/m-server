@@ -15,9 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Author: chrisliu
- * Date: 2019/3/29 16:23
- * Mail: gwarmdll@gmail.com
+ * 将websocket服务注册到eureka
  */
 @Component
 public class Client implements SmartInitializingSingleton {
