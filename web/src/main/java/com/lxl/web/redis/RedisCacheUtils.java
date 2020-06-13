@@ -86,6 +86,34 @@ public class RedisCacheUtils {
     }
 
     /**
+     * 当key不存在时，才能存放key
+     *
+     * @param key
+     * @param value
+     * @param seconds
+     * @return
+     */
+    public boolean setIfAbsent(String key, Object value, long seconds) {
+        logger.debug("存入缓存 key且key不存在:" + key);
+        RedisTemplate template = getRedisSerializer(value.getClass());
+        try {
+            ValueOperations<String, Object> operation = template.opsForValue();
+            if (seconds > 0) {
+                return operation.setIfAbsent(key, value, seconds, TimeUnit.SECONDS);
+            } else {
+                return operation.setIfAbsent(key, value);
+            }
+        } catch (Exception ex) {
+            logger.error(ex.getMessage());
+            return false;
+        }
+    }
+
+    public boolean setIfAbsent(String key, Object value) {
+        return setIfAbsent(key, value, 0);
+    }
+
+    /**
      * 根据pattern匹配清除缓存
      *
      * @param pattern
