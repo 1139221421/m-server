@@ -57,6 +57,7 @@ public class AuthController implements ProducerDeal {
 //            e.printStackTrace();
 //        }
         logger.info("auth 访问...");
+        redisCacheUtils.getRedisTemplate().opsForValue().increment("test", 1);
         System.out.println("redis 取得test值=" + redisCacheUtils.getCacheObject("test"));
 //        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
 //        return messageFeign.test();
