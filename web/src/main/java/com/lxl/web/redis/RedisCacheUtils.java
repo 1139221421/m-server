@@ -80,7 +80,7 @@ public class RedisCacheUtils {
             }
             return true;
         } catch (Exception ex) {
-            logger.error(ex.getMessage());
+            logger.error("redis exception:", ex);
             return false;
         }
     }
@@ -104,7 +104,7 @@ public class RedisCacheUtils {
                 return operation.setIfAbsent(key, value);
             }
         } catch (Exception ex) {
-            logger.error(ex.getMessage());
+            logger.error("redis exception:", ex);
             return false;
         }
     }
@@ -129,8 +129,7 @@ public class RedisCacheUtils {
                 redisOperations.delete(key);
             }
         } catch (Exception ex) {
-            logger.error(ex.getMessage());
-            return;
+            logger.error("redis exception:", ex);
         }
     }
 
@@ -146,8 +145,7 @@ public class RedisCacheUtils {
             RedisOperations<String, Object> redisOperations = valueOper.getOperations();
             redisOperations.delete(key);
         } catch (Exception ex) {
-            logger.error(ex.getMessage());
-            return;
+            logger.error("redis exception:", ex);
         }
     }
 
@@ -163,7 +161,7 @@ public class RedisCacheUtils {
             ValueOperations<String, Object> operation = redisTemplate.opsForValue();
             return operation.get(key);
         } catch (Exception ex) {
-            logger.error(ex.getMessage());
+            logger.error("redis exception:", ex);
             return null;
         }
     }
@@ -388,7 +386,7 @@ public class RedisCacheUtils {
             }
             return result;
         } catch (Exception ex) {
-            logger.error(ex.getMessage());
+            logger.error("redis exception:", ex);
             return null;
         }
     }
