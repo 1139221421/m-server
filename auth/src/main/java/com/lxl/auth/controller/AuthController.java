@@ -6,6 +6,7 @@ import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.feign.message.MessageFeign;
 import com.lxl.common.vo.ResponseInfo;
+import com.lxl.web.redis.RedisCacheUtils;
 import com.lxl.web.annotations.Log;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
@@ -28,6 +29,9 @@ public class AuthController implements ProducerDeal {
 
     @Autowired
     private RocketMqConsumer rocketMqConsumer;
+
+    @Autowired
+    private RedisCacheUtils redisCacheUtils;
 
     /**
      * 服务器降级限流
@@ -53,6 +57,7 @@ public class AuthController implements ProducerDeal {
 //            e.printStackTrace();
 //        }
         logger.info("auth 访问...");
+        System.out.println("redis 取得test值=" + redisCacheUtils.getCacheObject("test"));
 //        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
 //        return messageFeign.test();
         return ResponseInfo.createSuccess();
