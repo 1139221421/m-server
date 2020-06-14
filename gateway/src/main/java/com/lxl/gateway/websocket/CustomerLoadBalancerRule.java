@@ -2,42 +2,28 @@ package com.lxl.gateway.websocket;
 
 import java.util.List;
 
-import org.apache.commons.lang.math.RandomUtils;
-import com.netflix.client.config.IClientConfig;
-import com.netflix.loadbalancer.AbstractLoadBalancerRule;
+import com.netflix.loadbalancer.ClientConfigEnabledRoundRobinRule;
 import com.netflix.loadbalancer.Server;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * 自定义gateway负载均衡，websocket协议单独处理
+ * 本来是实现 AbstractLoadBalancerRule，普通请求无法使用默认的路由方式 super.choose(key)
  *
  * @author: lxl
  */
 @Configuration
-public class CustomerLoadBalancerRule extends AbstractLoadBalancerRule {
+public class CustomerLoadBalancerRule extends ClientConfigEnabledRoundRobinRule {
 
     @Override
     public Server choose(Object key) {
-        List<Server> servers = this.getLoadBalancer().getReachableServers();
-        if (servers.isEmpty()) {
-            return null;
+        if (key != null && !"default".equals(key.toString())) {
+            List<Server> servers = this.getLoadBalancer().getReachableServers();
+            return consistentHashChoose(servers, key);
+        } else {
+            // 使用默认路由规则
+            return super.choose(key);
         }
-        if (servers.size() == 1) {
-            return servers.get(0);
-        }
-        if (key == null || "default".equals(key.toString())) {
-            return randomChoose(servers);
-        }
-        return consistentHashChoose(servers, key);
-    }
-
-    /**
-     * 随机返回一个服务实例
-     *
-     * @param servers
-     */
-    private Server randomChoose(List<Server> servers) {
-        return servers.get(RandomUtils.nextInt(servers.size()));
     }
 
     /**
@@ -49,10 +35,6 @@ public class CustomerLoadBalancerRule extends AbstractLoadBalancerRule {
     private Server consistentHashChoose(List<Server> servers, Object key) {
         ConsistentHash<Server> consistentHash = new ConsistentHash<>(200, servers);
         return consistentHash.get(key.toString());
-    }
-
-    @Override
-    public void initWithNiwsConfig(IClientConfig config) {
     }
 
 }
