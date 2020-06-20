@@ -20,7 +20,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void addUser(User user) {
+    public void crate(User user) {
         userMapper.insert(user);
+    }
+
+    @Override
+    public void update(User user) {
+        userMapper.updateById(user);
+    }
+
+    @Override
+    public void delete(Long id) {
+        userMapper.deleteById(id);
     }
 }

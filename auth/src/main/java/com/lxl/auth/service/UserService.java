@@ -8,5 +8,9 @@ public interface UserService {
 
     List<User> findAll();
 
-    void addUser(User user);
+    void crate(User user);
+
+    void update(User user);
+
+    void delete(Long id);
 }

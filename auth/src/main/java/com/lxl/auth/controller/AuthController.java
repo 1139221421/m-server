@@ -2,8 +2,6 @@ package com.lxl.auth.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
-import com.lxl.auth.service.UserService;
-import com.lxl.common.entity.auth.User;
 import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.feign.message.MessageFeign;
@@ -31,9 +29,6 @@ public class AuthController implements ProducerDeal {
 
     @Autowired
     private RedisCacheUtils redisCacheUtils;
-
-    @Autowired
-    private UserService userService;
 
     /**
      * 服务器降级限流
@@ -74,13 +69,7 @@ public class AuthController implements ProducerDeal {
         System.out.println("redis 取得test值=" + redisCacheUtils.getCacheObject("test"));
 //        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
 //        return messageFeign.test();
-        return ResponseInfo.createSuccess(userService.findAll());
-    }
-
-    @PostMapping("/addUser")
-    public ResponseInfo addUser(@RequestBody User user) {
-        userService.addUser(user);
-        return ResponseInfo.createSuccess(userService.findAll());
+        return ResponseInfo.createSuccess();
     }
 
     /**
