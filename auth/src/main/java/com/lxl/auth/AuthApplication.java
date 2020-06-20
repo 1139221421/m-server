@@ -28,6 +28,11 @@ public class AuthApplication {
         // 取消Sentinel控制台懒加载
         System.setProperty("spring.cloud.sentinel.eager", "true");
 
+        //Hystrix全局超时时间配置,使用@HystrixCommand注解实现（可以不配置注解参数）
+        System.setProperty("hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds", "6000");
+        //Hystrix针对某个方法超时时间配置,使用@HystrixCommand(commandKey = "test")注解实现
+        System.setProperty("hystrix.command.test.execution.isolation.thread.timeoutInMilliseconds", "1000");
+
         SpringApplication.run(AuthApplication.class, args);
     }
 

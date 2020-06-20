@@ -44,10 +44,21 @@ public class AuthController implements ProducerDeal {
      */
 //    @SentinelResource(value = "test", blockHandler = "handleException", blockHandlerClass = ExceptionUtil.class)
     @SentinelResource(value = "test", blockHandler = "handleException")
-    @HystrixCommand(commandKey = "test", groupKey = "testGroup",
-            commandProperties = {
-                    @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds", value = "3000")
-            })
+    @HystrixCommand(commandKey = "test")
+    //	限流策略：线程池方式
+//    @HystrixCommand(
+//            commandKey = "test",
+//            commandProperties = {
+//                    @HystrixProperty(name = "execution.isolation.strategy", value = "THREAD")
+//            },
+//            threadPoolKey = "testThreadPool",
+//            threadPoolProperties = {
+//                    @HystrixProperty(name = "coreSize", value = "3"),
+//                    @HystrixProperty(name = "maxQueueSize", value = "5"), // 最大排队长度。默认-1，使用SynchronousQueue。其他值则使用 LinkedBlockingQueue
+//                    @HystrixProperty(name = "queueSizeRejectionThreshold", value = "7") // 排队线程数量阈值，默认为5，达到时拒绝,maxQueueSize=-1失效
+//            },
+//            fallbackMethod = "fallbackMethod"
+//    )
     @GetMapping("/test")
     @Log
     public ResponseInfo test() {
@@ -56,7 +67,7 @@ public class AuthController implements ProducerDeal {
 //        } catch (InterruptedException e) {
 //            e.printStackTrace();
 //        }
-        logger.info("auth 访问...");
+        logger.info(Thread.currentThread().getName() + "执行 auth 访问...");
         redisCacheUtils.getRedisTemplate().opsForValue().increment("test", 1);
         System.out.println("redis 取得test值=" + redisCacheUtils.getCacheObject("test"));
 //        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
@@ -73,6 +84,10 @@ public class AuthController implements ProducerDeal {
     public ResponseInfo handleException(BlockException ex) {
         logger.error("限流异常：", ex);
         return ResponseInfo.createCodeEnum(CodeEnum.FLOW_ERROR).setMessage("哎呀，坚持不住了...");
+    }
+
+    public ResponseInfo fallbackMethod() {
+        return ResponseInfo.createCodeEnum(CodeEnum.FLOW_ERROR).setMessage("HystrixCommand...");
     }
 
     @Override

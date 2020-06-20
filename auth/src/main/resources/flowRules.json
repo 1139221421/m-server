@@ -2,7 +2,7 @@
   {
     "resource": "test",
     "controlBehavior": 0,
-    "count": 1,
+    "count": 10,
     "grade": 1,
     "limitApp": "default",
     "strategy": 0,
