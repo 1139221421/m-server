@@ -2,6 +2,8 @@ package com.lxl.auth.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.lxl.auth.service.UserService;
+import com.lxl.common.entity.auth.User;
 import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.feign.message.MessageFeign;
@@ -11,13 +13,10 @@ import com.lxl.web.annotations.Log;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
-import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -32,6 +31,9 @@ public class AuthController implements ProducerDeal {
 
     @Autowired
     private RedisCacheUtils redisCacheUtils;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * 服务器降级限流
@@ -72,7 +74,13 @@ public class AuthController implements ProducerDeal {
         System.out.println("redis 取得test值=" + redisCacheUtils.getCacheObject("test"));
 //        rocketMqConsumer.sendTransactionMsg("mq调用测试", MqTagsEnum.TEST);
 //        return messageFeign.test();
-        return ResponseInfo.createSuccess();
+        return ResponseInfo.createSuccess(userService.findAll());
+    }
+
+    @PostMapping("/addUser")
+    public ResponseInfo addUser(@RequestBody User user) {
+        userService.addUser(user);
+        return ResponseInfo.createSuccess(userService.findAll());
     }
 
     /**
