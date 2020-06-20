@@ -1,6 +1,7 @@
 package com.lxl.web.aop;
 
 import com.lxl.common.enums.LogTypeEnum;
+import com.lxl.common.vo.ResponseInfo;
 import com.lxl.web.annotations.Log;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -35,12 +36,13 @@ public class LogAspect extends AspectBase {
     public Object doSaveLog(ProceedingJoinPoint joinPoint) throws Throwable {
         // 解析Log注解
         Method currentMethod = currentMethod(joinPoint);
+        ResponseInfo responseInfo = (ResponseInfo) joinPoint.proceed();
         Log log = currentMethod.getAnnotation(Log.class);
         LogTypeEnum value = log.value();
         if (logPoint != null) {
-            logPoint.saveLog(joinPoint, value);
+            logPoint.saveLog(joinPoint, value, responseInfo);
         }
-        return joinPoint.proceed();
+        return responseInfo;
     }
 
 

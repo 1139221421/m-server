@@ -2,6 +2,7 @@ package com.lxl.web.aop;
 
 import com.lxl.common.entity.log.Log;
 import com.lxl.common.enums.LogTypeEnum;
+import com.lxl.common.vo.ResponseInfo;
 import com.lxl.web.mq.RocketMqConsumer;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
@@ -19,7 +20,7 @@ public interface LogPoint {
      * @param joinPoint
      * @param logTypeEnum
      */
-    void saveLog(ProceedingJoinPoint joinPoint, LogTypeEnum logTypeEnum);
+    void saveLog(ProceedingJoinPoint joinPoint, LogTypeEnum logTypeEnum, ResponseInfo responseInfo);
 
     /**
      * 生成操作日志
@@ -29,5 +30,5 @@ public interface LogPoint {
      * @param request
      * @return
      */
-    Log operateLog(ProceedingJoinPoint joinPoint, LogTypeEnum logTypeEnum, HttpServletRequest request);
+    Log operateLog(ProceedingJoinPoint joinPoint, LogTypeEnum logTypeEnum, ResponseInfo responseInfo, HttpServletRequest request);
 }

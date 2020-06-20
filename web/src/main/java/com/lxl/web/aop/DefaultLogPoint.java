@@ -25,9 +25,9 @@ public class DefaultLogPoint implements LogPoint {
     private RocketMqConsumer rocketMqConsumer;
 
     @Override
-    public void saveLog(ProceedingJoinPoint joinPoint, LogTypeEnum logTypeEnum) {
+    public void saveLog(ProceedingJoinPoint joinPoint, LogTypeEnum logTypeEnum, ResponseInfo responseInfo) {
         Object arg = joinPoint.getArgs();
-        Log log = operateLog(joinPoint, logTypeEnum, HttpServletUtils.getRequest());
+        Log log = operateLog(joinPoint, logTypeEnum, responseInfo, HttpServletUtils.getRequest());
         if (log != null) {
             //            rocketMqConsumer.sendMsg(JSON.toJSONString(log), MqTagsEnum.LOG);
             LOGGER.info("日志已发往mq处理。。。");
@@ -43,13 +43,12 @@ public class DefaultLogPoint implements LogPoint {
      * @return
      */
     @Override
-    public Log operateLog(ProceedingJoinPoint joinPoint, LogTypeEnum logTypeEnum, HttpServletRequest request) {
+    public Log operateLog(ProceedingJoinPoint joinPoint, LogTypeEnum logTypeEnum, ResponseInfo responseInfo, HttpServletRequest request) {
         try {
             String pattern = logTypeEnum.getPattern();
             String creatorName = null;
             String creatorId = null;
             Log log = new Log();
-            ResponseInfo responseInfo = (ResponseInfo) joinPoint.proceed();
             String status = responseInfo != null && responseInfo.getSuccess() ? "操作成功" : "操作失败";
             if (logTypeEnum.equals(LogTypeEnum.LOGIN_LOG)) {
                 // 登录日志
