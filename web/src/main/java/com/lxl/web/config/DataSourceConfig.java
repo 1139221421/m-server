@@ -31,6 +31,12 @@ public class DataSourceConfig {
         return druidDataSource;
     }
 
+    /**
+     * seata必须设置数据源代理
+     * 参考 https://blog.csdn.net/qq_34988304/article/details/105363960
+     * @param druidDataSource
+     * @return
+     */
     @Primary
     @Bean("dataSource")
     public DataSourceProxy dataSource(DataSource druidDataSource) {
