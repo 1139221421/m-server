@@ -4,15 +4,17 @@ import com.lxl.utils.config.ConfUtil;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableHystrix
 @EnableEurekaClient
-@SpringBootApplication(scanBasePackages = "com.lxl")
 @EnableFeignClients(basePackages = {"com.lxl.common.feign"})
 @MapperScan(basePackages = "com.lxl.*.dao")
+// seata必须禁用Springboot的dataSources自动装配
+@SpringBootApplication(scanBasePackages = "com.lxl", exclude = DataSourceAutoConfiguration.class)
 public class AuthApplication {
 
     public static void main(String[] args) throws Exception {
@@ -35,6 +37,8 @@ public class AuthApplication {
         //Hystrix针对某个方法超时时间配置,使用@HystrixCommand(commandKey = "test")注解实现
         System.setProperty("hystrix.command.test.execution.isolation.thread.timeoutInMilliseconds", "1000");
 
+
+        System.setProperty("spring.cloud.alibaba.seata.tx-service-group", "my_test_tx_group");
         SpringApplication.run(AuthApplication.class, args);
     }
 

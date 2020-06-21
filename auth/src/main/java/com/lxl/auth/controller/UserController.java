@@ -16,9 +16,6 @@ public class UserController {
     private final static Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
-    private MessageFeign messageFeign;
-
-    @Autowired
     private UserService userService;
 
     @PostMapping("/create")
@@ -30,9 +27,6 @@ public class UserController {
     @PostMapping("/update")
     public ResponseInfo update(@RequestBody User user) {
         userService.update(user);
-        Message message = new Message();
-        message.setTitle("test");
-        messageFeign.create(message);
         return ResponseInfo.createSuccess(userService.findAll());
     }
 

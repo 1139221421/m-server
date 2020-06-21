@@ -14,11 +14,9 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <mybatis-spring-boot-starter.version>2.0.0</mybatis-spring-boot-starter.version>
-        <druid-spring-boot-starter.version>1.1.10</druid-spring-boot-starter.version>
         <mybatis-plus-boot-starter.version>2.3.1</mybatis-plus-boot-starter.version>
-        <mysql-connector-java.version>5.1.37</mysql-connector-java.version>
         <seata.version>1.2.0</seata.version>
+        <com.alibaba.cloud.version>2.1.0.RELEASE</com.alibaba.cloud.version>
     </properties>
 
     <dependencies>
@@ -40,20 +38,6 @@
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
             <version>1.9.2</version>
-        </dependency>
-        <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-api</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!--rocket mq-->
         <dependency>
@@ -83,22 +67,36 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <!--        seata       -->
-<!--        <dependency>-->
-        <!--            <groupId>com.alibaba.cloud</groupId>-->
-        <!--            <artifactId>spring-cloud-alibaba-seata</artifactId>-->
-        <!--            <version>2.1.0.RELEASE</version>-->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+        <!--        <dependency>-->
+        <!--            <groupId>com.zaxxer</groupId>-->
+        <!--            <artifactId>HikariCP</artifactId>-->
         <!--            <exclusions>-->
         <!--                <exclusion>-->
-        <!--                    <artifactId>seata-all</artifactId>-->
-        <!--                    <groupId>io.seata</groupId>-->
+        <!--                    <artifactId>slf4j-api</artifactId>-->
+        <!--                    <groupId>org.slf4j</groupId>-->
         <!--                </exclusion>-->
         <!--            </exclusions>-->
         <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>io.seata</groupId>-->
-        <!--            <artifactId>seata-all</artifactId>-->
-        <!--            <version>${seata.version}</version>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-alibaba-seata</artifactId>
+            <version>${com.alibaba.cloud.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>seata-all</artifactId>
+                    <groupId>io.seata</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.seata</groupId>
+            <artifactId>seata-all</artifactId>
+            <version>${seata.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
