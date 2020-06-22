@@ -5,8 +5,8 @@ import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
-import com.lxl.utils.config.ConfUtil;
 import com.lxl.web.handler.BaseEntityHandler;
+import com.zaxxer.hikari.HikariDataSource;
 import io.seata.rm.datasource.DataSourceProxy;
 import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.plugin.Interceptor;
@@ -21,26 +21,38 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import javax.sql.DataSource;
 
+/**
+ * seata数据源搭理配置
+ * 增加配置项 spring.cloud.alibaba.seata.tx-service-group=my_test_tx_group
+ * 启动类禁用Springboot的dataSources自动装配 @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
+ */
 @Configuration
 public class DataSourceConfig {
 
+    /**
+     * 配置数据源
+     *
+     * @return
+     */
     @Bean
     @ConfigurationProperties(prefix = "spring.datasource")
     public DataSource druidDataSource() {
-        DruidDataSource druidDataSource = new DruidDataSource();
-        return druidDataSource;
+        // Druid数据源
+        //return new DataSource();
+        // HikariCP数据源，注意是JdbcUrl
+        return new HikariDataSource();
     }
 
     /**
      * seata必须设置数据源代理
      * 参考 https://blog.csdn.net/qq_34988304/article/details/105363960
-     * @param druidDataSource
+     *
      * @return
      */
     @Primary
     @Bean("dataSource")
-    public DataSourceProxy dataSource(DataSource druidDataSource) {
-        return new DataSourceProxy(druidDataSource);
+    public DataSourceProxy dataSource(DataSource dataSource) {
+        return new DataSourceProxy(dataSource);
     }
 
     @Bean
