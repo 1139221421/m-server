@@ -100,18 +100,18 @@ public abstract class BaseAuthInterceptor<T extends OperatorBase> extends Handle
                 operatorUtils.extendUserToken(loginUser);
 
                 if (Boolean.parseBoolean(ConfUtil.getPropertyOrDefault("security_ip_check", "false")) && !loginUser.getCurrentLoginIp().equals(ipAddr)) {
-                    logger.warn("当前用户[{}]登录IP[{}]地址发生变化！，IP[{}]拒绝访问！", loginUser.getUserName(), loginUser.getCurrentLoginIp(), ipAddr);
+                    logger.warn("当前用户[{}]登录IP[{}]地址发生变化！，IP[{}]拒绝访问！", loginUser.getUsername(), loginUser.getCurrentLoginIp(), ipAddr);
                     return false;
                 }
                 request.setAttribute("loginUser", loginUser);
                 if (StringUtils.isNotBlank(permissionName)) {
                     String permissionNameStr = permissionName.toString();
-                    logger.info("当前用户【{}】 请求权限【{}】", loginUser.getUserName(), permissionNameStr);
+                    logger.info("当前用户【{}】 请求权限【{}】", loginUser.getUsername(), permissionNameStr);
                     //角色权限判断
                     if (!verifyPerms(loginUser.getHasRoleId(), permissionNameStr)) {
                         //没有权限
                         notPermission(response);
-                        logger.error(beanName + " loginId:" + loginUser.getUserId() + " loginName:" + loginUser.getUserName() + " funcId:" + permissionName + " [没有权限]");
+                        logger.error(beanName + " loginId:" + loginUser.getId() + " loginName:" + loginUser.getUsername() + " funcId:" + permissionName + " [没有权限]");
                         return false;
                     }
                 }

@@ -2,10 +2,13 @@ package com.lxl.auth.controller;
 
 import com.alibaba.csp.sentinel.annotation.SentinelResource;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.lxl.auth.service.AuthService;
+import com.lxl.auth.vo.LoginRequestInfo;
 import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.feign.message.MessageFeign;
 import com.lxl.common.vo.ResponseInfo;
+import com.lxl.web.annotations.Logined;
 import com.lxl.web.redis.RedisCacheUtils;
 import com.lxl.web.annotations.Log;
 import com.lxl.web.mq.ProducerDeal;
@@ -15,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import static com.lxl.web.utils.HttpServletUtils.getRequest;
 
 @RestController
 @RequestMapping("/auth")
@@ -29,6 +34,9 @@ public class AuthController implements ProducerDeal {
 
     @Autowired
     private RedisCacheUtils redisCacheUtils;
+
+    @Autowired
+    private AuthService authService;
 
     /**
      * 服务器降级限流
@@ -103,5 +111,21 @@ public class AuthController implements ProducerDeal {
         return true;
     }
 
+    @RequestMapping(value = "/isLogined")
+    @ResponseBody
+    @Logined
+    public ResponseInfo isLogined() {
+        return new ResponseInfo(true);
+    }
+
+    /***
+     * 用户登录
+     * @return
+     */
+    @PostMapping(value = "/login")
+    @ResponseBody
+    public ResponseInfo login(@RequestBody LoginRequestInfo loginRequestInfo) {
+        return authService.login(loginRequestInfo);
+    }
 }
 

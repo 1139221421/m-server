@@ -101,10 +101,10 @@ public class OperatorUtils {
      * @return
      */
     public <T extends OperatorBase> String createToken(T loginUser, long seconds) {
-        String token = Md5Utils.hash(Md5Utils.getUUID() + loginUser.getUserId());
+        String token = Md5Utils.hash(Md5Utils.getUUID() + loginUser.getId());
         loginUser.setToken(token);
         loginUser.setCurrentLoginIp(IpUtils.getIpAddr(getRequest()));
-        String tokenKey = Constance.User.TOKEN_USER + loginUser.getUserLoginType() + "_" + loginUser.getUserId();
+        String tokenKey = Constance.User.TOKEN_USER + loginUser.getUserLoginType() + "_" + loginUser.getId();
         String sessionKey = Constance.User.USER_SESSION + token;
         // 查询该用户有没有登陆
         String t = (String) redisCacheUtils.getCacheObject(tokenKey);
@@ -128,7 +128,7 @@ public class OperatorUtils {
         redisCacheUtils.delete(Constance.User.USER_SESSION + token);
         OperatorBase operator = getUser(OperatorBase.class);
         if (operator != null) {
-            redisCacheUtils.delete(Constance.User.TOKEN_USER + operator.getUserLoginType() + "_" + operator.getUserId());
+            redisCacheUtils.delete(Constance.User.TOKEN_USER + operator.getUserLoginType() + "_" + operator.getId());
         }
     }
 
@@ -140,7 +140,7 @@ public class OperatorUtils {
     public Long getLoginUserId() {
         OperatorBase operator = getUser(OperatorBase.class);
         if (operator != null) {
-            return operator.getUserId();
+            return operator.getId();
         }
         return null;
     }
@@ -166,7 +166,7 @@ public class OperatorUtils {
     public void extendUserToken(OperatorBase loginUser) {
         if (getUserExpiration() != null && getUserExpiration() < Long.valueOf(ConfUtil.getPropertyOrDefault("auto_extend_time_valve", "30"))) {
             redisCacheUtils.expire(Constance.User.USER_SESSION + loginUser.getToken(), 120, TimeUnit.MINUTES);
-            redisCacheUtils.expire(Constance.User.TOKEN_USER + loginUser.getUserLoginType() + "_" + loginUser.getUserId(), 120, TimeUnit.MINUTES);
+            redisCacheUtils.expire(Constance.User.TOKEN_USER + loginUser.getUserLoginType() + "_" + loginUser.getId(), 120, TimeUnit.MINUTES);
         }
     }
 

@@ -17,7 +17,7 @@ public class AuthCurrentUser {
 
     public static Long getUserId() {
         if (getUser() != null) {
-            return getUser().getUserId();
+            return getUser().getId();
         }
         return null;
     }

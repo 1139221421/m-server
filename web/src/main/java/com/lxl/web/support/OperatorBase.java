@@ -12,11 +12,11 @@ public class OperatorBase {
     /**
      * 当前登录用户名
      */
-    protected String userName;
+    protected String username;
     /**
      * 当前登录用户id
      */
-    protected Long userId;
+    protected Long id;
 
     protected String token;
     /**
