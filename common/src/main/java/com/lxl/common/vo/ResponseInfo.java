@@ -1,6 +1,5 @@
 package com.lxl.common.vo;
 
-import com.alibaba.fastjson.JSONObject;
 import com.lxl.common.enums.CodeEnum;
 
 import java.io.Serializable;
