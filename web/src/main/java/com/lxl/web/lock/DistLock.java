@@ -1,4 +1,4 @@
-package com.lxl.utils.lock;
+package com.lxl.web.lock;
 
 import com.lxl.utils.config.ConfUtil;
 import org.apache.curator.framework.CuratorFramework;

@@ -1,4 +1,4 @@
-package com.lxl.web.support;
+package com.lxl.web.json;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter;
