@@ -5,4 +5,6 @@ import com.lxl.common.vo.ResponseInfo;
 
 public interface AuthService {
     ResponseInfo login(LoginRequestInfo loginRequestInfo);
+
+    ResponseInfo logout(String token);
 }

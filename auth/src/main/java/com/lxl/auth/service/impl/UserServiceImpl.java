@@ -1,6 +1,5 @@
 package com.lxl.auth.service.impl;
 
-import cn.hutool.core.lang.Assert;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lxl.auth.dao.UserMapper;
 import com.lxl.auth.service.UserService;
@@ -9,7 +8,6 @@ import com.lxl.auth.vo.LoginUserInfo;
 import com.lxl.common.entity.auth.User;
 import com.lxl.common.entity.message.Message;
 import com.lxl.common.feign.message.MessageFeign;
-import com.lxl.utils.common.Md5Utils;
 import com.lxl.utils.common.PasswordUtil;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.stereotype.Service;
