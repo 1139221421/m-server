@@ -39,6 +39,10 @@ public class AuthApplication {
 
 
         System.setProperty("spring.cloud.alibaba.seata.tx-service-group", "my_test_tx_group");
+
+        System.setProperty("spring.elasticsearch.rest.uris[0]", "http://118.24.101.162:9200");
+        System.setProperty("spring.elasticsearch.rest.username", "elastic");
+        System.setProperty("spring.elasticsearch.rest.password", "123456");
         SpringApplication.run(AuthApplication.class, args);
     }
 

@@ -2,6 +2,7 @@ package com.lxl.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lxl.auth.dao.UserMapper;
+import com.lxl.auth.elastic.UserRepository;
 import com.lxl.auth.service.UserService;
 import com.lxl.auth.vo.LoginRequestInfo;
 import com.lxl.auth.vo.LoginUserInfo;
@@ -9,6 +10,7 @@ import com.lxl.common.entity.auth.User;
 import com.lxl.common.entity.message.Message;
 import com.lxl.common.feign.message.MessageFeign;
 import com.lxl.utils.common.PasswordUtil;
+import com.lxl.web.elastic.ElasticCustomerOperate;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,12 @@ public class UserServiceImpl implements UserService {
     @Resource
     private MessageFeign messageFeign;
 
+    @Resource
+    private ElasticCustomerOperate elasticCustomerOperate;
+
+    @Resource
+    private UserRepository userRepository;
+
     @Override
     public List<User> findAll() {
         return userMapper.findAll();
@@ -31,6 +39,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public void crate(User user) {
         userMapper.insert(user);
+        user.setUsername(user.getUsername() + "-template");
+        elasticCustomerOperate.save(user);
+        user.setUsername(user.getUsername() + "-repository");
+        userRepository.save(user);
     }
 
     @Override
