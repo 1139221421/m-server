@@ -45,7 +45,7 @@ public class RocketMqConsumer implements TransactionListener {
     /**
      * namesrv地址
      */
-    private static final String NAMES_ADDR = ConfUtil.getPropertyOrDefault("rocketmq-addr", "localhost::9876");
+    private static final String NAMES_ADDR = ConfUtil.getPropertyOrDefault("rocketmq-addr", "dev::9876");
 
     private final static Logger logger = LoggerFactory.getLogger(RocketMqConsumer.class);
     private static final TransactionMQProducer PRODUCER = new TransactionMQProducer(PRODUCER_GROUP_NAME);

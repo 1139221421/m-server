@@ -38,7 +38,7 @@
                 class="com.github.danielwegener.logback.kafka.keying.NoKeyKeyingStrategy"/>
         <deliveryStrategy
                 class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"/>
-        <producerConfig>bootstrap.servers=localhost:9092</producerConfig>
+        <producerConfig>bootstrap.servers=dev:9092</producerConfig>
     </appender>
     <!-- 异步处理 -->
     <appender name="async-kafka" class="ch.qos.logback.classic.AsyncAppender">
