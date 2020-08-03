@@ -1,5 +1,7 @@
 package com.lxl.auth.service.impl;
 
+import cn.hutool.log.Log;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lxl.auth.dao.UserMapper;
 import com.lxl.auth.elastic.UserRepository;
@@ -12,11 +14,13 @@ import com.lxl.common.feign.message.MessageFeign;
 import com.lxl.utils.common.PasswordUtil;
 import com.lxl.web.elastic.ElasticCustomerOperate;
 import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
 
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService {
     @Resource
@@ -38,6 +42,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void crate(User user) {
+        log.info("添加用户：{}", JSON.toJSONString(user));
         userMapper.insert(user);
         user.setUsername(user.getUsername() + "-template");
         elasticCustomerOperate.save(user);

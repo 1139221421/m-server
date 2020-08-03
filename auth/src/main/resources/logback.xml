@@ -50,7 +50,11 @@
     </root>
     <springProfile name="dev">
         <!--    环境判断 spring.profiles.active=dev    -->
-        <logger name="com.lxl" level="DEBUG"/>
+        <!--        <logger name="com.lxl" level="DEBUG"/>-->
+        <!--        测试用     -->
+        <logger name="com.lxl" level="DEBUG">
+            <appender-ref ref="async-kafka"/>
+        </logger>
         <logger name="org.springframework" level="DEBUG"/>
     </springProfile>
     <springProfile name="prod">
