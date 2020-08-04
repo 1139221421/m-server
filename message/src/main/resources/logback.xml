@@ -38,7 +38,7 @@
                 class="com.github.danielwegener.logback.kafka.keying.NoKeyKeyingStrategy"/>
         <deliveryStrategy
                 class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"/>
-        <producerConfig>bootstrap.servers=localhost:9092</producerConfig>
+        <producerConfig>bootstrap.servers=dev:9092</producerConfig>
     </appender>
     <!-- 异步处理 -->
     <appender name="async-kafka" class="ch.qos.logback.classic.AsyncAppender">
@@ -48,10 +48,14 @@
     <root level="INFO">
         <appender-ref ref="console"/>
     </root>
+    <root level="ERROR">
+        <appender-ref ref="async-kafka"/>
+    </root>
     <springProfile name="dev">
         <!--    环境判断 spring.profiles.active=dev    -->
-        <logger name="com.lxl" level="DEBUG"/>
-        <logger name="org.springframework" level="DEBUG"/>
+        <logger name="com.lxl" level="DEBUG">
+            <appender-ref ref="async-kafka"/>
+        </logger>
     </springProfile>
     <springProfile name="prod">
         <logger name="com.lxl" level="DEBUG">

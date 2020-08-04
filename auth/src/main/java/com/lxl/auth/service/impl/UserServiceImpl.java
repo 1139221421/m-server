@@ -42,7 +42,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void crate(User user) {
-        log.info("添加用户：{}", JSON.toJSONString(user));
+        log.debug("添加用户：{}", JSON.toJSONString(user));
         userMapper.insert(user);
         user.setUsername(user.getUsername() + "-template");
         elasticCustomerOperate.save(user);
