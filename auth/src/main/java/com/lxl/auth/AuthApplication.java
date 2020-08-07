@@ -32,15 +32,17 @@ public class AuthApplication {
         // 取消Sentinel控制台懒加载
         System.setProperty("spring.cloud.sentinel.eager", "true");
 
+        // 使用分布式事务seata时放开注释
+        //        System.setProperty("spring.cloud.alibaba.seata.tx-service-group", "my_test_tx_group");
+
         //Hystrix全局超时时间配置,使用@HystrixCommand注解实现（可以不配置注解参数）
         System.setProperty("hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds", "6000");
         //Hystrix针对某个方法超时时间配置,使用@HystrixCommand(commandKey = "test")注解实现
         System.setProperty("hystrix.command.test.execution.isolation.thread.timeoutInMilliseconds", "1000");
 
-// 使用分布式事务seata时放开注释
-//        System.setProperty("spring.cloud.alibaba.seata.tx-service-group", "my_test_tx_group");
-
-        System.setProperty("spring.elasticsearch.rest.uris[0]", "http://dev:9200");
+        System.setProperty("spring.elasticsearch.rest.uris[0]", "http://dev:9201");
+        System.setProperty("spring.elasticsearch.rest.uris[1]", "http://dev:9202");
+        System.setProperty("spring.elasticsearch.rest.uris[2]", "http://dev:9203");
         System.setProperty("spring.elasticsearch.rest.username", "elastic");
         System.setProperty("spring.elasticsearch.rest.password", "123456");
         SpringApplication.run(AuthApplication.class, args);
