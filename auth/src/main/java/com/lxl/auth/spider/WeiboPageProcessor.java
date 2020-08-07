@@ -28,8 +28,7 @@ public class WeiboPageProcessor implements PageProcessor {
     @Override
     public void process(Page page) {
         List<String> urls = new ArrayList<String>();
-        // 200页 4000条数据左右
-        for (int i = 2; i <= 200; i++) {
+        for (int i = 2; i <= 30; i++) {
             urls.add("https://m.weibo.cn/api/container/getIndex?containerid=102803_ctg1_8999_-_ctg1_8999_home&page=" + i);
         }
         page.addTargetRequests(urls);

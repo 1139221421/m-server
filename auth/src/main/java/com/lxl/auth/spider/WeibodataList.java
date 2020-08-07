@@ -17,6 +17,9 @@ public class WeibodataList {
     public static void addData(WeiboData data) {
         if (!map.containsKey(data.getId())) {
             map.put(data.getId(), data);
+        } else {
+            // 重复没做处理
+            map.put(data.getId(), data);
         }
     }
 
