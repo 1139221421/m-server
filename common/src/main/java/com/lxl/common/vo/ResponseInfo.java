@@ -34,7 +34,7 @@ public class ResponseInfo<T> implements Serializable {
         return this;
     }
 
-    public static ResponseInfo createSuccess() {
+    public static <T> ResponseInfo<T> createSuccess() {
         return createCodeEnum(CodeEnum.SUCCESS);
     }
 
@@ -44,14 +44,16 @@ public class ResponseInfo<T> implements Serializable {
         return success;
     }
 
-    public static ResponseInfo createCodeEnum(CodeEnum codeEnum) {
-        ResponseInfo responseInfo = new ResponseInfo<>(true);
-        if (Integer.parseInt(codeEnum.getCode()) < 0) {
-            responseInfo.setSuccess(false);
-        }
+    public static <T> ResponseInfo<T> createCodeEnum(CodeEnum codeEnum) {
+        ResponseInfo<T> responseInfo = new ResponseInfo<>();
+        responseInfo.setSuccess(codeEnum.isSuccess());
         responseInfo.setCode(codeEnum.getCode());
         responseInfo.setMessage(codeEnum.getMessage());
         return responseInfo;
+    }
+
+    public static <T> ResponseInfo<T> createError() {
+        return createCodeEnum(CodeEnum.ERROR);
     }
 
     public String getCode() {
@@ -75,12 +77,12 @@ public class ResponseInfo<T> implements Serializable {
         success = false;
     }
 
-    public ResponseInfo addData(String key, Object value) {
+    public ResponseInfo<T> addData(String key, Object value) {
         data.put(key, value);
         return this;
     }
 
-    public ResponseInfo setMessage(String message) {
+    public ResponseInfo<T> setMessage(String message) {
         this.message = message;
         return this;
     }

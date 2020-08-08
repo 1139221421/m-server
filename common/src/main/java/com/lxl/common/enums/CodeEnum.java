@@ -7,17 +7,18 @@ package com.lxl.common.enums;
  * @Version 1.0.0
  **/
 public enum CodeEnum {
-    SUCCESS("1", "操作成功"),
-    ERROR("0", "操作失败"),
-    SERVICE_ERROR("500", "服务内部错误"),
-    FLOW_ERROR("1000", "服务器繁忙，请稍后重试"),
-    NOT_LOGIN("1001", "未登录系统"),
-    PARAM_ERROR("1002", "参数错误"),
-    NO_PERMISSION("1003", "权限不足"),
-    TIME_OUT("1010", "服务器超时，请重试");
+    SUCCESS("1", "操作成功",true),
+    ERROR("0", "操作失败",false),
+    SERVICE_ERROR("500", "服务内部错误",false),
+    FLOW_ERROR("1000", "服务器繁忙，请稍后重试",false),
+    NOT_LOGIN("1001", "未登录系统",false),
+    PARAM_ERROR("1002", "参数错误",false),
+    NO_PERMISSION("1003", "权限不足",false),
+    TIME_OUT("1010", "服务器超时，请重试",false);
 
     public String code;
     public String message;
+    public boolean success;
 
     public String getCode() {
         return code;
@@ -35,8 +36,17 @@ public enum CodeEnum {
         this.message = message;
     }
 
-    CodeEnum(String code, String message) {
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
+    CodeEnum(String code, String message, boolean success) {
         this.code = code;
         this.message = message;
+        this.success = success;
     }
 }
