@@ -37,6 +37,7 @@ public class AuthApplication {
         // 2.客户禁用@SpringBootApplication(exclude = DataSourceAutoConfiguration.class) dataSources自动装配
         // 3.配置seata数据源搭理 DataSourceConfig
         // 4.file.conf和registry.conf
+        System.setProperty("spring.cloud.alibaba.seata.enable", "false");
         System.setProperty("spring.cloud.alibaba.seata.tx-service-group", "my_test_tx_group");
 
         //Hystrix全局超时时间配置,使用@HystrixCommand注解实现（可以不配置注解参数）
