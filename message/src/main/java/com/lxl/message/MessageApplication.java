@@ -27,7 +27,6 @@ public class MessageApplication {
         System.setProperty("netty-websocket.discovery.client.port", "8787");
         System.setProperty("server.port", "6667");
 
-        System.setProperty("spring.cloud.alibaba.seata.enable", "false");
         System.setProperty("spring.cloud.alibaba.seata.tx-service-group", "my_test_tx_group");
         SpringApplication.run(MessageApplication.class, args);
     }

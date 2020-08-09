@@ -12,9 +12,6 @@ import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.type.JdbcType;
 import org.mybatis.spring.transaction.SpringManagedTransactionFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -53,48 +50,12 @@ public class DataSourceConfig {
      */
     @Primary
     @Bean("dataSource")
-    @ConditionalOnExpression("${spring.cloud.alibaba.seata.enable:false}==true")
     public DataSourceProxy dataSource(DataSource dataSource) {
         return new DataSourceProxy(dataSource);
     }
 
-    /**
-     * 开启seata
-     *
-     * @param dataSourceProxy
-     * @return
-     * @throws Exception
-     */
     @Bean
-    @ConditionalOnBean(DataSourceProxy.class)
     public SqlSessionFactory sqlSessionFactory(DataSourceProxy dataSourceProxy) throws Exception {
-        MybatisSqlSessionFactoryBean sqlSessionFactoryBean = buildSqlSessionFactoryBean();
-        sqlSessionFactoryBean.setDataSource(dataSourceProxy);
-        return sqlSessionFactoryBean.getObject();
-    }
-
-    /**
-     * 不开启seata
-     *
-     * @param dataSource
-     * @return
-     * @throws Exception
-     */
-    @Bean
-    @ConditionalOnMissingBean(DataSourceProxy.class)
-    public SqlSessionFactory sqlSessionFactory1(DataSource dataSource) throws Exception {
-        MybatisSqlSessionFactoryBean sqlSessionFactoryBean = buildSqlSessionFactoryBean();
-        sqlSessionFactoryBean.setDataSource(dataSource);
-        return sqlSessionFactoryBean.getObject();
-    }
-
-    /**
-     * 构建MybatisSqlSessionFactoryBean
-     *
-     * @return
-     * @throws Exception
-     */
-    private MybatisSqlSessionFactoryBean buildSqlSessionFactoryBean() throws Exception {
         MybatisSqlSessionFactoryBean sqlSessionFactoryBean = new MybatisSqlSessionFactoryBean();
 
         // 配置mybatis-plus的分页
@@ -102,7 +63,9 @@ public class DataSourceConfig {
         Interceptor[] plugins = {paginationInterceptor};
         sqlSessionFactoryBean.setPlugins(plugins);
 
-        sqlSessionFactoryBean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath*:/mapper/*.xml"));
+        sqlSessionFactoryBean.setDataSource(dataSourceProxy);
+        sqlSessionFactoryBean.setMapperLocations(new PathMatchingResourcePatternResolver()
+                .getResources("classpath*:/mapper/*.xml"));
 
         // 配置spring的本地事务
         sqlSessionFactoryBean.setTransactionFactory(new SpringManagedTransactionFactory());
@@ -114,7 +77,7 @@ public class DataSourceConfig {
         cfg.setCacheEnabled(false);
         cfg.setLogImpl(StdOutImpl.class);
         sqlSessionFactoryBean.setConfiguration(cfg);
-        return sqlSessionFactoryBean;
+        return sqlSessionFactoryBean.getObject();
     }
 
     @Bean
