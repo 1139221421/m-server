@@ -3,6 +3,7 @@ package com.lxl.auth.spider;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -12,7 +13,7 @@ import java.util.stream.Collectors;
  */
 public class WeibodataList {
 
-    private static Map<Long, WeiboData> map = new HashMap<>();
+    private static Map<Long, WeiboData> map = new ConcurrentHashMap<>();
 
     public static void addData(WeiboData data) {
         if (!map.containsKey(data.getId())) {
