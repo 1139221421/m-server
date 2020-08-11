@@ -1,6 +1,5 @@
 package com.lxl.auth.service.impl;
 
-import cn.hutool.log.Log;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.lxl.auth.dao.UserMapper;
