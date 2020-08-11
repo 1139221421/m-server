@@ -1,15 +1,17 @@
 package com.lxl.web.config;
 
-import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
-import com.baomidou.mybatisplus.core.incrementer.IKeyGenerator;
-import com.baomidou.mybatisplus.extension.incrementer.OracleKeyGenerator;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import com.lxl.web.handler.BaseEntityHandler;
 import com.zaxxer.hikari.HikariDataSource;
 import io.seata.rm.datasource.DataSourceProxy;
+import org.apache.ibatis.logging.stdout.StdOutImpl;
 import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.type.JdbcType;
 import org.mybatis.spring.transaction.SpringManagedTransactionFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -57,39 +59,52 @@ public class DataSourceConfig {
     public SqlSessionFactory sqlSessionFactory(DataSourceProxy dataSourceProxy) throws Exception {
         MybatisSqlSessionFactoryBean sqlSessionFactoryBean = new MybatisSqlSessionFactoryBean();
 
+        // 配置数据源
+        sqlSessionFactoryBean.setDataSource(dataSourceProxy);
+
+        sqlSessionFactoryBean.setMapperLocations(new PathMatchingResourcePatternResolver()
+                .getResources("classpath*:/mapper/*.xml"));
+        sqlSessionFactoryBean.setTypeAliasesPackage("com.lxl.common.entity.*");
+
+        // 数据库配置
+        GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
+        // 主键类型  AUTO:"数据库ID自增"
+        dbConfig.setIdType(IdType.AUTO);
+        // 逻辑删除配置
+        dbConfig.setLogicDeleteValue("1");
+        dbConfig.setLogicNotDeleteValue("0");
+
+        // 全局配置
+        GlobalConfig globalConfig = new GlobalConfig();
+        globalConfig.setDbConfig(dbConfig);
+        globalConfig.setMetaObjectHandler(new BaseEntityHandler());
+        sqlSessionFactoryBean.setGlobalConfig(globalConfig);
+
+        // mybatis配置
+        MybatisConfiguration configuration = new MybatisConfiguration();
+        configuration.setMapUnderscoreToCamelCase(true);
+        configuration.setCacheEnabled(false);
+        configuration.setCallSettersOnNulls(true);
+        sqlSessionFactoryBean.setConfiguration(configuration);
+
+        // 配置mybatis配置
+        MybatisConfiguration cfg = new MybatisConfiguration();
+        cfg.setJdbcTypeForNull(JdbcType.NULL);
+        cfg.setMapUnderscoreToCamelCase(true);
+        cfg.setCacheEnabled(false);
+        // 开启日志
+        cfg.setLogImpl(StdOutImpl.class);
+        sqlSessionFactoryBean.setConfiguration(cfg);
+
+        // 配置spring的本地事务
+        sqlSessionFactoryBean.setTransactionFactory(new SpringManagedTransactionFactory());
+
         // 配置mybatis-plus的分页
         PaginationInterceptor paginationInterceptor = new PaginationInterceptor();
         Interceptor[] plugins = {paginationInterceptor};
         sqlSessionFactoryBean.setPlugins(plugins);
 
-        sqlSessionFactoryBean.setDataSource(dataSourceProxy);
-        sqlSessionFactoryBean.setMapperLocations(new PathMatchingResourcePatternResolver()
-                .getResources("classpath*:/mapper/*.xml"));
-
-        // 配置spring的本地事务
-        sqlSessionFactoryBean.setTransactionFactory(new SpringManagedTransactionFactory());
         return sqlSessionFactoryBean.getObject();
     }
 
-    /**
-     * 更新公共字段
-     * 方式一：@TableField(fill = FieldFill.INSERT) @TableField(fill = FieldFill.INSERT_UPDATE)
-     * 方式二：在MetaObjectHandler 继承类的重写方法insertFill或者updateFill中
-     *
-     * @return
-     */
-    @Bean
-    public MetaObjectHandler metaObjectHandler() {
-        return new BaseEntityHandler();
-    }
-
-    /**
-     * 主键生成
-     *
-     * @return
-     */
-    @Bean
-    public IKeyGenerator iKeyGenerator() {
-        return new OracleKeyGenerator();
-    }
 }
