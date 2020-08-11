@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.extension.activerecord.Model;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -16,7 +15,7 @@ import java.util.Date;
  * @Aythor
  */
 @Data
-public class BaseEntity<T extends Model<?>> extends Model<Model<?>> implements Serializable {
+public class BaseEntity implements Serializable {
 
     @TableField(exist = false)
     private static final long serialVersionUID = -34115333603863619L;
@@ -47,10 +46,5 @@ public class BaseEntity<T extends Model<?>> extends Model<Model<?>> implements S
      */
     @TableField(value = "updator_id", fill = FieldFill.INSERT_UPDATE)
     private Long updatorId;
-
-    @Override
-    protected Serializable pkVal() {
-        return id;
-    }
 
 }
