@@ -3,6 +3,7 @@ package com.lxl.auth;
 import com.alibaba.fastjson.JSON;
 import com.lxl.auth.elastic.UserRepository;
 import com.lxl.auth.service.UserService;
+import com.lxl.common.entity.auth.User;
 import com.lxl.web.elastic.ElasticCustomerOperate;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -12,6 +13,7 @@ import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
 import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
 import org.elasticsearch.index.query.GeoPolygonQueryBuilder;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -44,10 +46,31 @@ public class AuthApplicationTests extends BaseTest {
 
     @Test
     public void findUsers() {
-//        List<User> list = userService.findAll();
-//        repository.deleteAll();
-//        repository.saveAll(list);
+        List<User> list = userService.findAll();
+        repository.deleteAll();
+        repository.saveAll(list);
         System.out.println(JSON.toJSONString(repository.findAll()));
+    }
+
+    @Test
+    public void userSearchAfter() throws Exception {
+        SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().query(new MatchAllQueryBuilder());
+        SearchRequest request = new SearchRequest("user");
+        searchSourceBuilder.sort("createTime", SortOrder.DESC);
+        searchSourceBuilder.size(10);
+        request.source(searchSourceBuilder);
+        SearchResponse searchResponse = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        SearchHit[] hits = searchResponse.getHits().getHits();
+        System.out.println(JSON.toJSONString(hits));
+
+        //将上次查询最后一条记录的排序字段作为searchAfter参数，查询上次结果之后的数据
+        // 上次最后一条数据时间戳1581374654000L；注意多个字段排序保持searchAfter传参顺序
+        searchSourceBuilder.searchAfter(new Object[]{1581374654000L});
+        SearchRequest request1 = new SearchRequest("user");
+        request1.source(searchSourceBuilder);
+        SearchResponse searchResponse1 = restHighLevelClient.search(request1, RequestOptions.DEFAULT);
+        SearchHit[] hits1 = searchResponse1.getHits().getHits();
+        System.out.println(JSON.toJSONString(hits1));
     }
 
     @Test
