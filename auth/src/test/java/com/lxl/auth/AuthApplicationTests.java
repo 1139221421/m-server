@@ -11,12 +11,10 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
-import org.elasticsearch.index.query.GeoPolygonQueryBuilder;
-import org.elasticsearch.index.query.MatchAllQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Test;
@@ -140,6 +138,58 @@ public class AuthApplicationTests extends BaseTest {
      */
     @Test
     public void SearchComprehensive() throws Exception {
+        // 位置查询
+        double lat = 30.640808;
+        double lon = 104.036032;
+        String name = "广场";
+        String type = "景点";
+        String desc = "逛街";
+
+        // 位置查询 并把位置的相对权重调高，默认1
+        SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource();
+        GeoDistanceQueryBuilder distanceQueryBuilder = new GeoDistanceQueryBuilder("location");
+        distanceQueryBuilder.point(lat, lon);
+        distanceQueryBuilder.distance(5, DistanceUnit.KILOMETERS);
+        distanceQueryBuilder.boost(2);
+
+        searchSourceBuilder.query(QueryBuilders.boolQuery()
+                // 位置查询 must换成filter则不会打分
+                .must(distanceQueryBuilder)
+                // 名称模糊查询(部分词)
+                .must(QueryBuilders.matchPhraseQuery("name", name))
+                //类型全匹配 注意：该字段类型必须是keyword，不能是text
+                .must(QueryBuilders.termQuery("type", type))
+                // 描述关键词匹配（分词）,多个字段用 multiMatchQuery
+                .must(QueryBuilders.matchQuery("desc", desc)));
+
+        //高亮配置
+        HighlightBuilder highlightBuilder = new HighlightBuilder();
+        highlightBuilder
+                //高亮查询字段
+                .field("desc")
+                .field("type")
+                //如果要多个字段高亮,这项要为false
+                .requireFieldMatch(false)
+                //高亮设置
+                .preTags("<span style=\"color:yellow\">")
+                .postTags("</span>")
+                //下面这两项,如果你要高亮如文字内容等有很多字的字段,必须配置,不然会导致高亮不全,文章内容缺失等
+                //最大高亮分片数
+                .fragmentSize(800000)
+                //从第一个分片获取高亮片段
+                .numOfFragments(0);
+        searchSourceBuilder.highlighter(highlightBuilder);
+
+        // 按分值排序
+        searchSourceBuilder.sort("_score", SortOrder.DESC);
+
+        SearchRequest request = new SearchRequest("area");
+        request.source(searchSourceBuilder);
+        SearchResponse searchResponse = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        SearchHit[] hits = searchResponse.getHits().getHits();
+        for (SearchHit hit : hits) {
+            System.out.println("分数：" + hit.getScore() + " 对象：" + JSON.toJSONString(hit.getSourceAsMap()));
+        }
     }
 
 }
