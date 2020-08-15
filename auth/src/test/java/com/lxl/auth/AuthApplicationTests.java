@@ -27,6 +27,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @SpringBootTest
 @RunWith(SpringRunner.class)
@@ -44,14 +45,28 @@ public class AuthApplicationTests extends BaseTest {
     @Autowired
     private RestHighLevelClient restHighLevelClient;
 
+    /**
+     * 数据同步
+     */
     @Test
-    public void findUsers() {
+    public void syncUsers() {
+        elasticCustomerOperate.indexOps(User.class).delete();
+        elasticCustomerOperate.createAndPutMapping(User.class);
         List<User> list = userService.findAll();
-        repository.deleteAll();
         repository.saveAll(list);
+        Optional<User> optional = repository.findById(1L);
+        User user = null;
+        if (optional.isPresent()) {
+            user = optional.get();
+        }
         System.out.println(JSON.toJSONString(repository.findAll()));
     }
 
+    /**
+     * searchAfter
+     *
+     * @throws Exception
+     */
     @Test
     public void userSearchAfter() throws Exception {
         SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().query(new MatchAllQueryBuilder());
@@ -73,6 +88,11 @@ public class AuthApplicationTests extends BaseTest {
         System.out.println(JSON.toJSONString(hits1));
     }
 
+    /**
+     * 距离范围查询
+     *
+     * @throws Exception
+     */
     @Test
     public void searchDistance() throws Exception {
         double lat = 30.640808;
@@ -111,6 +131,15 @@ public class AuthApplicationTests extends BaseTest {
         SearchResponse searchResponse1 = restHighLevelClient.search(request1, RequestOptions.DEFAULT);
         SearchHit[] hits1 = searchResponse1.getHits().getHits();
         System.out.println(JSON.toJSONString(hits1));
+    }
+
+    /**
+     * 综合查询
+     *
+     * @throws Exception
+     */
+    @Test
+    public void SearchComprehensive() throws Exception {
     }
 
 }

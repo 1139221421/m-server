@@ -12,6 +12,7 @@ import org.elasticsearch.script.ScriptType;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
 import org.springframework.data.elasticsearch.core.IndexOperations;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
 import org.springframework.data.elasticsearch.core.query.UpdateQuery;
 import org.springframework.data.elasticsearch.core.query.UpdateResponse;
 
@@ -26,6 +27,7 @@ public class ElasticCustomerOperate extends ElasticsearchRestTemplate {
     }
 
     public boolean createAndPutMapping(Class<? extends BaseEntity> cls) {
+        indexOps(IndexCoordinates.of(getIndexName(cls))).create();
         IndexOperations indexOperations = indexOps(cls);
         return indexOperations.putMapping(indexOperations.createMapping());
     }
