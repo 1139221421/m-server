@@ -7,12 +7,19 @@ import com.lxl.common.entity.auth.User;
 import com.lxl.web.elastic.ElasticCustomerOperate;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.unit.DistanceUnit;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.GeoDistanceQueryBuilder;
+import org.elasticsearch.index.query.GeoPolygonQueryBuilder;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.metrics.Avg;
+import org.elasticsearch.search.aggregations.metrics.AvgAggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.sort.GeoDistanceSortBuilder;
@@ -66,14 +73,19 @@ public class AuthApplicationTests extends BaseTest {
      * @throws Exception
      */
     @Test
-    public void userSearchAfter() throws Exception {
+    public void useSearchAfter() throws Exception {
         SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().query(new MatchAllQueryBuilder());
         SearchRequest request = new SearchRequest("user");
         searchSourceBuilder.sort("createTime", SortOrder.DESC);
         searchSourceBuilder.size(10);
+        // 聚合查询 查询平均年龄
+        AvgAggregationBuilder aggregation = AggregationBuilders.avg("avg_age").field("age");
+        searchSourceBuilder.aggregation(aggregation);
         request.source(searchSourceBuilder);
         SearchResponse searchResponse = restHighLevelClient.search(request, RequestOptions.DEFAULT);
         SearchHit[] hits = searchResponse.getHits().getHits();
+        Avg avg = searchResponse.getAggregations().get("avg_age");
+        System.out.println("平均年龄：" + avg.getValue());
         System.out.println(JSON.toJSONString(hits));
 
         //将上次查询最后一条记录的排序字段作为searchAfter参数，查询上次结果之后的数据
@@ -138,23 +150,21 @@ public class AuthApplicationTests extends BaseTest {
      */
     @Test
     public void SearchComprehensive() throws Exception {
-        // 位置查询
         double lat = 30.640808;
         double lon = 104.036032;
         String name = "广场";
         String type = "景点";
-        String desc = "逛街";
+        String desc = "美食购物";
 
-        // 位置查询 并把位置的相对权重调高，默认1
+        // 位置查询
         SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource();
         GeoDistanceQueryBuilder distanceQueryBuilder = new GeoDistanceQueryBuilder("location");
         distanceQueryBuilder.point(lat, lon);
         distanceQueryBuilder.distance(5, DistanceUnit.KILOMETERS);
-        distanceQueryBuilder.boost(2);
 
         searchSourceBuilder.query(QueryBuilders.boolQuery()
-                // 位置查询 must换成filter则不会打分
-                .must(distanceQueryBuilder)
+                // 位置查询
+                .filter(distanceQueryBuilder)
                 // 名称模糊查询(部分词)
                 .must(QueryBuilders.matchPhraseQuery("name", name))
                 //类型全匹配 注意：该字段类型必须是keyword，不能是text
@@ -180,11 +190,22 @@ public class AuthApplicationTests extends BaseTest {
                 .numOfFragments(0);
         searchSourceBuilder.highlighter(highlightBuilder);
 
-        // 按分值排序
-        searchSourceBuilder.sort("_score", SortOrder.DESC);
+        // 按分值排序 默认 _score DESC
+        // searchSourceBuilder.sort("_score", SortOrder.DESC);
+        // 查询超时
+        // searchSourceBuilder.timeout(TimeValue.timeValueMinutes(2L));
+        // 分页量
+        // searchSourceBuilder.size(10);
 
         SearchRequest request = new SearchRequest("area");
+        // 默认QUERY_THEN_FETCH：打分时只参考本分片，数据少的时候不够准确
+        // DFS_QUERY_THEN_FETCH:增加了预查询处理，询问term和document frequency，评分更准确，性能更差
+        request.searchType(SearchType.DFS_QUERY_THEN_FETCH);
         request.source(searchSourceBuilder);
+        // 设置指定查询的路由分片
+        // request.routing("routing");
+        // 用preference方法去指定优先去某个分片上去查询（默认的是随机先去某个分片）
+        // request.preference("_local");
         SearchResponse searchResponse = restHighLevelClient.search(request, RequestOptions.DEFAULT);
         SearchHit[] hits = searchResponse.getHits().getHits();
         for (SearchHit hit : hits) {
