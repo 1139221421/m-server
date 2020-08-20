@@ -5,6 +5,7 @@ import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.message.service.MessageService;
 import com.lxl.web.mq.ConsumerDeal;
+import io.seata.rm.tcc.api.BusinessActionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,5 +39,10 @@ public class MessageController implements ConsumerDeal {
     public boolean deal(String msg) {
         logger.info("成功消费mq消息...");
         return true;
+    }
+
+    @PostMapping("/savePrepare")
+    public ResponseInfo savePrepare(@RequestBody Message message) {
+        return ResponseInfo.createSuccess().setSuccess(messageService.savePrepare(new BusinessActionContext(), message));
     }
 }
