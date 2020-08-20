@@ -24,7 +24,8 @@
         <module>web</module>
         <module>auth</module>
         <module>message</module>
-        <module>log</module>
+        <module>order</module>
+        <module>storage</module>
     </modules>
 
     <properties>
