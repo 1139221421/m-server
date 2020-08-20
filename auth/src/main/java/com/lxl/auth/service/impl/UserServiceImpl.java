@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -54,12 +55,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @GlobalTransactional(name = "test", rollbackFor = Exception.class)
     public void update(User user) {
         userMapper.updateById(user);
-        Message message = new Message();
-        message.setTitle("test");
-        messageFeign.create(message);
     }
 
     @Override
@@ -145,5 +142,18 @@ public class UserServiceImpl implements UserService {
     public boolean updateRollback(BusinessActionContext actionContext) {
         //回滚到事务提交前的状态
         return true;
+    }
+
+    /**
+     * 扣减余额
+     *
+     * @param id
+     * @param reduce
+     * @return
+     */
+    @Override
+    public ResponseInfo reduceAccountBalance(Long id, BigDecimal reduce) {
+        userMapper.reduceAccountBalance(id, reduce);
+        return ResponseInfo.createSuccess();
     }
 }
