@@ -68,6 +68,7 @@ public class RocketMqConsumer implements TransactionListener {
     private static final DefaultMQPushConsumer BROADCAST_CONSUMER = new DefaultMQPushConsumer(BROADCASY_GROUP_NAME);
     private static final DefaultMQPushConsumer ORDER_CONSUMER = new DefaultMQPushConsumer(ORDER_GROUP_NAME);
     private static final String MQ_CONSUME_CACHE = "mq_consume_cache_";
+    private static final String MQ_COMMIT_CACHE = "mq_commit_cache_";
     private static final String MSG_ID = "msg_id:";
 
     @PostConstruct
@@ -316,11 +317,17 @@ public class RocketMqConsumer implements TransactionListener {
         try {
             // 业务操作
             String s = new String(msg.getBody());
+            String msgId = getMsgId(s);
+            if (redisCacheUtils.exist(MQ_COMMIT_CACHE + msgId)) {
+                log.info("mq重复执行本地事务:{}", s);
+                return LocalTransactionState.COMMIT_MESSAGE;
+            }
             log.info("执行本地事务取得信息为：{},", s);
             List<ProducerDeal> beans = SpringContextUtils.getBeans(ProducerDeal.class);
             for (ProducerDeal bean : beans) {
                 if (bean.supportTag(msg.getTags())) {
                     if (bean.excute(getRealMsg(s))) {
+                        redisCacheUtils.setCacheObject(MQ_COMMIT_CACHE + msgId, true, 60 * 60 * 12);
                         log.info("本地事务执行成功，发送【确认】消息:{}", s);
                         return LocalTransactionState.COMMIT_MESSAGE;
                     }
@@ -346,10 +353,16 @@ public class RocketMqConsumer implements TransactionListener {
         try {
             List<ProducerDeal> beans = SpringContextUtils.getBeans(ProducerDeal.class);
             String s = new String(msg.getBody());
+            String msgId = getMsgId(s);
+            if (redisCacheUtils.exist(MQ_COMMIT_CACHE + msgId)) {
+                log.info("mq重复回查事务消息:{}", s);
+                return LocalTransactionState.COMMIT_MESSAGE;
+            }
             log.info("mq回查事务消息:{}", s);
             for (ProducerDeal bean : beans) {
                 if (bean.supportTag(msg.getTags())) {
                     if (bean.check(getRealMsg(s))) {
+                        redisCacheUtils.setCacheObject(MQ_COMMIT_CACHE + msgId, true, 60 * 60 * 12);
                         log.info("mq回查事务消息，发送【确认】消息:{}", s);
                         return LocalTransactionState.COMMIT_MESSAGE;
                     }
@@ -364,14 +377,12 @@ public class RocketMqConsumer implements TransactionListener {
         return LocalTransactionState.ROLLBACK_MESSAGE;
     }
 
-    /**
-     * 获取真实的msg
-     *
-     * @param msg
-     * @return
-     */
     private String getRealMsg(String msg) {
         return msg.substring(msg.indexOf("-") + 1);
+    }
+
+    private String getMsgId(String msg) {
+        return msg.substring(0, msg.indexOf("-"));
     }
 
 }
