@@ -70,6 +70,7 @@ public class RocketMqConsumer implements TransactionListener {
     private static final String MQ_CONSUME_CACHE = "mq_consume_cache_";
     private static final String MQ_COMMIT_CACHE = "mq_commit_cache_";
     private static final String MSG_ID = "msg_id:";
+    private static final String SEPARATOR = "-";
 
     @PostConstruct
     public void afterPropertiesSet() throws Exception {
@@ -126,7 +127,7 @@ public class RocketMqConsumer implements TransactionListener {
         }
         if (!msg.startsWith(MSG_ID)) {
             // 添加消息标识，避免由于网络或者其他原因catch后重复发送
-            msg = MSG_ID + UUID.fastUUID().toString(true) + "-" + msg;
+            msg = MSG_ID + UUID.fastUUID().toString(true) + SEPARATOR + msg;
         }
         try {
             String topicName = TOPIC_NAME;
@@ -269,32 +270,29 @@ public class RocketMqConsumer implements TransactionListener {
     private boolean consume(List<MessageExt> msgs) {
         try {
             if (CollectionUtil.isNotEmpty(msgs)) {
-                int index;
                 String message, msgId, s;
                 for (MessageExt msg : msgs) {
                     message = new String(msg.getBody());
-                    index = message.indexOf("-");
-                    if (index <= 0) {
-                        log.warn("检测到消息格式不正确：{}", message);
-                        return true;
-                    }
-                    msgId = message.substring(0, index);
-                    s = message.substring(index + 1);
-                    if (redisCacheUtils.exist(MQ_CONSUME_CACHE + msgId)) {
-                        log.warn("检测到有重复消息：{}", s);
-                        return true;
-                    }
-                    log.info("取得消费信息为：{}", s);
-                    List<ConsumerDeal> beans = SpringContextUtils.getBeans(ConsumerDeal.class);
-                    for (ConsumerDeal bean : beans) {
-                        if (bean.supportTag(msg.getTags())) {
-                            if (bean.deal(s)) {
-                                redisCacheUtils.setCacheObject(MQ_CONSUME_CACHE + msgId, true, 60 * 60 * 12);
-                            } else {
-                                return false;
-                            }
-                            break;
+                    msgId = getMsgId(message);
+                    s = getRealMsg(message);
+                    if (!redisCacheUtils.exist(MQ_CONSUME_CACHE + msgId)) {
+                        if (s == null) {
+                            continue;
                         }
+                        log.info("取得消费信息为：{}", s);
+                        List<ConsumerDeal> beans = SpringContextUtils.getBeans(ConsumerDeal.class);
+                        for (ConsumerDeal bean : beans) {
+                            if (bean.supportTag(msg.getTags())) {
+                                if (bean.deal(s)) {
+                                    redisCacheUtils.setCacheObject(MQ_CONSUME_CACHE + msgId, true, 60 * 60 * 12);
+                                } else {
+                                    return false;
+                                }
+                                break;
+                            }
+                        }
+                    } else {
+                        log.warn("检测到有重复消息：{}", s);
                     }
                 }
             }
@@ -378,11 +376,17 @@ public class RocketMqConsumer implements TransactionListener {
     }
 
     private String getRealMsg(String msg) {
-        return msg.substring(msg.indexOf("-") + 1);
+        if (msg == null || !msg.contains(SEPARATOR)) {
+            return null;
+        }
+        return msg.substring(msg.indexOf(SEPARATOR) + 1);
     }
 
     private String getMsgId(String msg) {
-        return msg.substring(0, msg.indexOf("-"));
+        if (msg == null || !msg.contains(SEPARATOR)) {
+            return null;
+        }
+        return msg.substring(0, msg.indexOf(SEPARATOR));
     }
 
 }
