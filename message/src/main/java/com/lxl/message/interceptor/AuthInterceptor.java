@@ -2,6 +2,7 @@ package com.lxl.message.interceptor;
 
 import com.lxl.web.interceptor.BaseAuthInterceptor;
 import com.lxl.web.support.OperatorBase;
+import org.springframework.context.annotation.Configuration;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -9,6 +10,7 @@ import java.util.Set;
 /**
  * 获取权限集合
  */
+@Configuration
 public class AuthInterceptor extends BaseAuthInterceptor<OperatorBase> {
 
     @Override

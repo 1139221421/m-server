@@ -1,4 +1,4 @@
-package com.lxl.order.interceptor;
+package com.lxl.auth.interceptor;
 
 import com.lxl.web.interceptor.BaseAuthInterceptor;
 import com.lxl.web.support.OperatorBase;
