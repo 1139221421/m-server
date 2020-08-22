@@ -319,9 +319,12 @@ public class RocketMqConsumer implements TransactionListener {
             log.info("执行本地事务取得信息为：{},", s);
             List<ProducerDeal> beans = SpringContextUtils.getBeans(ProducerDeal.class);
             for (ProducerDeal bean : beans) {
-                if (bean.supportTag(msg.getTags()) && bean.excute(s)) {
-                    log.info("本地事务执行成功，发送【确认】消息:{}", s);
-                    return LocalTransactionState.COMMIT_MESSAGE;
+                if (bean.supportTag(msg.getTags())) {
+                    if (bean.excute(getRealMsg(s))) {
+                        log.info("本地事务执行成功，发送【确认】消息:{}", s);
+                        return LocalTransactionState.COMMIT_MESSAGE;
+                    }
+                    break;
                 }
             }
             log.info("本地事务执行失败，发送【回滚】消息:{}", s);
@@ -345,9 +348,12 @@ public class RocketMqConsumer implements TransactionListener {
             String s = new String(msg.getBody());
             log.info("mq回查事务消息:{}", s);
             for (ProducerDeal bean : beans) {
-                if (bean.supportTag(msg.getTags()) && bean.check(s)) {
-                    log.info("mq回查事务消息，发送【确认】消息:{}", s);
-                    return LocalTransactionState.COMMIT_MESSAGE;
+                if (bean.supportTag(msg.getTags())) {
+                    if (bean.check(getRealMsg(s))) {
+                        log.info("mq回查事务消息，发送【确认】消息:{}", s);
+                        return LocalTransactionState.COMMIT_MESSAGE;
+                    }
+                    break;
                 }
             }
             log.info("mq回查事务消息，发送【回滚】消息:{}", s);
@@ -356,6 +362,16 @@ public class RocketMqConsumer implements TransactionListener {
             log.error("mq回查事务消息，", e);
         }
         return LocalTransactionState.ROLLBACK_MESSAGE;
+    }
+
+    /**
+     * 获取真实的msg
+     *
+     * @param msg
+     * @return
+     */
+    private String getRealMsg(String msg) {
+        return msg.substring(msg.indexOf("-") + 1);
     }
 
 }

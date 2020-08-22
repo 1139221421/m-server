@@ -4,6 +4,7 @@ package com.lxl.common.enums;
 public enum MqTagsEnum {
     TEST("TEST", "测试"),
     LOG("LOG", "系统日志"),
+    REDUCE_STOCK("REDUCE_STOCK", "扣减库存"),
     WEBSOCKET_MSG("WEBSOCKET_MSG", "websocket消息");
 
     private String tagName;
