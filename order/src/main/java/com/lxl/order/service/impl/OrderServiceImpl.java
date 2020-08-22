@@ -6,6 +6,7 @@ import com.lxl.common.feign.storage.StorageFeign;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.order.dao.OrderMapper;
 import com.lxl.order.service.OrderService;
+import io.seata.rm.tcc.api.BusinessActionContext;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +23,16 @@ public class OrderServiceImpl implements OrderService {
 
     @Resource
     private StorageFeign storageFeign;
-
+    
+    /**
+     * rocketmq最终事务一致性 模拟下单
+     *
+     * @return
+     */
+    @Override
+    public ResponseInfo mqCreateOrder() {
+        return null;
+    }
 
     /**
      * 分布式事务seata-at模拟下单
@@ -39,10 +49,16 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.insert(order);
 
         // 扣款（未验证金额）
-        authFeign.reduceAccountBalance(1L, new BigDecimal(10));
+        ResponseInfo responseInfo = authFeign.reduceAccountBalance(1L, new BigDecimal(10));
+        if (!responseInfo.getSuccess()) {
+            throw new RuntimeException(responseInfo.getMessage());
+        }
 
         // 减库存（未验证库存）
-        storageFeign.reduceStock(1L, 1);
+        responseInfo = storageFeign.reduceStock(1L, 1);
+        if (!responseInfo.getSuccess()) {
+            throw new RuntimeException(responseInfo.getMessage());
+        }
 
         return ResponseInfo.createSuccess();
     }
@@ -57,6 +73,21 @@ public class OrderServiceImpl implements OrderService {
         return null;
     }
 
+    @Override
+    public boolean tccCreateOrderPrepare(BusinessActionContext actionContext, Order order) {
+        return false;
+    }
+
+    @Override
+    public boolean tccCreateOrderCommit(BusinessActionContext actionContext) {
+        return false;
+    }
+
+    @Override
+    public boolean tccCreateOrderRollback(BusinessActionContext actionContext) {
+        return false;
+    }
+
     /**
      * 分布式事务seata-saga模拟下单
      *
@@ -67,13 +98,4 @@ public class OrderServiceImpl implements OrderService {
         return null;
     }
 
-    /**
-     * rocketmq最终事务一致性 模拟下单
-     *
-     * @return
-     */
-    @Override
-    public ResponseInfo mqCreateOrder() {
-        return null;
-    }
 }

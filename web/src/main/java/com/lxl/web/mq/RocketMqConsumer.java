@@ -9,15 +9,15 @@ import com.lxl.web.redis.RedisCacheUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
-import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
-import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
-import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
+import org.apache.rocketmq.client.consumer.listener.*;
 import org.apache.rocketmq.client.producer.LocalTransactionState;
+import org.apache.rocketmq.client.producer.MessageQueueSelector;
 import org.apache.rocketmq.client.producer.TransactionListener;
 import org.apache.rocketmq.client.producer.TransactionMQProducer;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.common.protocol.heartbeat.MessageModel;
 import org.apache.rocketmq.remoting.common.RemotingHelper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +49,7 @@ public class RocketMqConsumer implements TransactionListener {
      */
     private static final String CONSUMER_GROUP_NAME = ConfUtil.getPropertyOrDefault("rocketmq-consumer", "lxl-consumer");
     private static final String BROADCASY_GROUP_NAME = ConfUtil.getPropertyOrDefault("rocketmq-consumer", "lxl-consumer") + "-broadcast";
+    private static final String ORDER_GROUP_NAME = ConfUtil.getPropertyOrDefault("rocketmq-consumer", "lxl-consumer") + "-order";
     /**
      * 生产者组
      */
@@ -58,6 +59,7 @@ public class RocketMqConsumer implements TransactionListener {
      */
     private static final String TOPIC_NAME = ConfUtil.getPropertyOrDefault("rocketmq-topic", "lxl");
     private static final String BROADCASY_TOPIC_NAME = ConfUtil.getPropertyOrDefault("rocketmq-topic", "lxl") + "-broadcast";
+    private static final String ORDER_TOPIC_NAME = ConfUtil.getPropertyOrDefault("rocketmq-topic", "lxl") + "-order";
     /**
      * namesrv地址
      */
@@ -66,6 +68,7 @@ public class RocketMqConsumer implements TransactionListener {
     private static final TransactionMQProducer PRODUCER = new TransactionMQProducer(PRODUCER_GROUP_NAME);
     private static final DefaultMQPushConsumer CONSUMER = new DefaultMQPushConsumer(CONSUMER_GROUP_NAME);
     private static final DefaultMQPushConsumer BROADCAST_CONSUMER = new DefaultMQPushConsumer(BROADCASY_GROUP_NAME);
+    private static final DefaultMQPushConsumer ORDER_CONSUMER = new DefaultMQPushConsumer(ORDER_GROUP_NAME);
     private static final String MQ_CONSUME_CACHE = "mq_consume_cache_";
     private static final String MSG_ID = "msg_id:";
 
@@ -92,6 +95,14 @@ public class RocketMqConsumer implements TransactionListener {
         BROADCAST_CONSUMER.setMessageListener((MessageListenerConcurrently) this::consumeMessage);
         BROADCAST_CONSUMER.start();
 
+        //启动顺序消费者
+        ORDER_CONSUMER.setNamesrvAddr(NAMES_ADDR);
+        ORDER_CONSUMER.setConsumeMessageBatchMaxSize(1);
+        ORDER_CONSUMER.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_TIMESTAMP);
+        ORDER_CONSUMER.subscribe(ORDER_TOPIC_NAME, "*");
+        ORDER_CONSUMER.setMessageListener((MessageListenerOrderly) this::orderConsumeMessage);
+        ORDER_CONSUMER.start();
+
         //启动生产者 启动事务监听
         PRODUCER.setNamesrvAddr(NAMES_ADDR);
         PRODUCER.setTransactionListener(new RocketMqConsumer());
@@ -107,9 +118,10 @@ public class RocketMqConsumer implements TransactionListener {
      * @param isDefault      是否普通消息 true：普通消息  false：事务消息
      * @param delayTimeLevel 默认1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
      * @param isBroadcast    是否广播模式 true：广播
+     * @param orderId        顺序消费：要保证同一个orderId任务的所有消息发送到同一个队列上，才能保证FIFO的顺序
      * @return
      */
-    public void sendMsg(String msg, MqTagsEnum tag, boolean isDefault, Integer delayTimeLevel, boolean isBroadcast) {
+    public void sendMsg(String msg, MqTagsEnum tag, boolean isDefault, Integer delayTimeLevel, boolean isBroadcast, String orderId) {
         if (StringUtils.isEmpty(msg)) {
             return;
         }
@@ -121,6 +133,8 @@ public class RocketMqConsumer implements TransactionListener {
             String topicName = TOPIC_NAME;
             if (isBroadcast) {
                 topicName = BROADCASY_TOPIC_NAME;
+            } else if (StringUtils.isNotEmpty(orderId)) {
+                topicName = ORDER_TOPIC_NAME;
             }
             log.info("发送消息信息：{},tag：{}", msg, tag);
             Message message = new Message(topicName, tag.getTagName(), msg.getBytes(RemotingHelper.DEFAULT_CHARSET));
@@ -130,7 +144,18 @@ public class RocketMqConsumer implements TransactionListener {
                     // 延时消息
                     message.setDelayTimeLevel(delayTimeLevel);
                 }
-                PRODUCER.send(message, 3000);
+                if (StringUtils.isEmpty(orderId)) {
+                    PRODUCER.send(message);
+                } else {
+                    // 发送到mq服务器同一个队列上，保证顺序
+                    PRODUCER.send(message, new MessageQueueSelector() {
+                        @Override
+                        public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
+                            String orderId = (String) arg;
+                            return mqs.get(orderId.hashCode() % mqs.size());
+                        }
+                    }, orderId);
+                }
             } else {
                 // 事务消息
                 PRODUCER.sendMessageInTransaction(message, null);
@@ -140,7 +165,7 @@ public class RocketMqConsumer implements TransactionListener {
             log.warn("发送mq消息异常：{}，{}秒后重试间隔", e, interval);
             String msg1 = msg;
             executor.schedule(() -> {
-                sendMsg(msg1, tag, isDefault, delayTimeLevel, isBroadcast);
+                sendMsg(msg1, tag, isDefault, delayTimeLevel, isBroadcast, orderId);
             }, interval, TimeUnit.SECONDS);
         }
     }
@@ -153,7 +178,17 @@ public class RocketMqConsumer implements TransactionListener {
      * @return
      */
     public void sendMsg(String msg, MqTagsEnum tag) {
-        sendMsg(msg, tag, true, null, false);
+        sendMsg(msg, tag, true, null, false, null);
+    }
+
+    /**
+     * 普通顺序消息
+     *
+     * @param msg
+     * @param tag
+     */
+    public void sendOrderMsg(String msg, MqTagsEnum tag, String orderId) {
+        sendMsg(msg, tag, true, null, false, orderId);
     }
 
     /**
@@ -164,8 +199,8 @@ public class RocketMqConsumer implements TransactionListener {
      * @param delayTimeLevel 默认1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
      * @return
      */
-    public void sendMsg(String msg, MqTagsEnum tag, Integer delayTimeLevel) {
-        sendMsg(msg, tag, true, delayTimeLevel, false);
+    public void sendDelayMsg(String msg, MqTagsEnum tag, Integer delayTimeLevel) {
+        sendMsg(msg, tag, true, delayTimeLevel, false, null);
     }
 
     /**
@@ -176,7 +211,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @return
      */
     public void sendTransactionMsg(String msg, MqTagsEnum tag) {
-        sendMsg(msg, tag, false, null, false);
+        sendMsg(msg, tag, false, null, false, null);
     }
 
     /**
@@ -187,7 +222,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @return
      */
     public void sendBroadcastMsg(String msg, MqTagsEnum tag) {
-        sendMsg(msg, tag, true, null, true);
+        sendMsg(msg, tag, true, null, true, null);
     }
 
     /**
@@ -198,6 +233,22 @@ public class RocketMqConsumer implements TransactionListener {
      * @return
      */
     private ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
+        return consume(msgs) ? ConsumeConcurrentlyStatus.CONSUME_SUCCESS : ConsumeConcurrentlyStatus.RECONSUME_LATER;
+    }
+
+    /**
+     * 顺序消费
+     *
+     * @param msgs
+     * @param context
+     * @return
+     */
+    private ConsumeOrderlyStatus orderConsumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
+        // 当SUSPEND_CURRENT_QUEUE_A_MOMENT时（autoCommit设置无效），把消息从msgTreeMapTemp转移回msgTreeMap，等待下次消费
+        return consume(msgs) ? ConsumeOrderlyStatus.SUCCESS : ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
+    }
+
+    private boolean consume(List<MessageExt> msgs) {
         try {
             if (CollectionUtil.isNotEmpty(msgs)) {
                 int index;
@@ -207,32 +258,32 @@ public class RocketMqConsumer implements TransactionListener {
                     index = message.indexOf("-");
                     if (index <= 0) {
                         log.warn("检测到消息格式不正确：{}", message);
-                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                        return true;
                     }
                     msgId = message.substring(0, index);
                     s = message.substring(index + 1);
                     if (redisCacheUtils.exist(MQ_CONSUME_CACHE + msgId)) {
                         log.warn("检测到有重复消息：{}", s);
-                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                        return true;
                     }
-                    log.info("取得消费信息为：{},context:{}", s, context);
+                    log.info("取得消费信息为：{}", s);
                     List<ConsumerDeal> beans = SpringContextUtils.getBeans(ConsumerDeal.class);
                     for (ConsumerDeal bean : beans) {
                         if (bean.supportTag(msg.getTags())) {
                             if (bean.deal(s)) {
                                 redisCacheUtils.setCacheObject(MQ_CONSUME_CACHE + msgId, true, 60 * 60 * 12);
                             } else {
-                                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+                                return false;
                             }
                             break;
                         }
                     }
                 }
             }
-            return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+            return true;
         } catch (Exception e) {
             log.error("消息消费出现异常，", e);
-            return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+            return false;
         }
     }
 
