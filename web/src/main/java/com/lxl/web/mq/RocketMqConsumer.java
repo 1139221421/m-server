@@ -2,6 +2,7 @@ package com.lxl.web.mq;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson.JSON;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.utils.common.SpringContextUtils;
 import com.lxl.utils.config.ConfUtil;
@@ -10,10 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.*;
-import org.apache.rocketmq.client.producer.LocalTransactionState;
-import org.apache.rocketmq.client.producer.MessageQueueSelector;
-import org.apache.rocketmq.client.producer.TransactionListener;
-import org.apache.rocketmq.client.producer.TransactionMQProducer;
+import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.rocketmq.common.message.MessageExt;
@@ -138,6 +136,7 @@ public class RocketMqConsumer implements TransactionListener {
             }
             log.info("发送消息信息：{},tag：{}", msg, tag);
             Message message = new Message(topicName, tag.getTagName(), msg.getBytes(RemotingHelper.DEFAULT_CHARSET));
+            SendResult sendResult;
             if (isDefault) {
                 // 普通消息
                 if (delayTimeLevel != null) {
@@ -145,10 +144,10 @@ public class RocketMqConsumer implements TransactionListener {
                     message.setDelayTimeLevel(delayTimeLevel);
                 }
                 if (StringUtils.isEmpty(orderId)) {
-                    PRODUCER.send(message);
+                    sendResult = PRODUCER.send(message);
                 } else {
                     // 发送到mq服务器同一个队列上，保证顺序
-                    PRODUCER.send(message, new MessageQueueSelector() {
+                    sendResult = PRODUCER.send(message, new MessageQueueSelector() {
                         @Override
                         public MessageQueue select(List<MessageQueue> mqs, Message msg, Object arg) {
                             String orderId = (String) arg;
@@ -158,16 +157,28 @@ public class RocketMqConsumer implements TransactionListener {
                 }
             } else {
                 // 事务消息
-                PRODUCER.sendMessageInTransaction(message, null);
+                sendResult = PRODUCER.sendMessageInTransaction(message, null);
+            }
+            // RocketMQ SendStatus状态说明及如何保证数据不丢失 https://blog.csdn.net/qq_39683476/article/details/87878753
+            if (sendResult == null || sendResult.getSendStatus() != SendStatus.SEND_OK) {
+                log.warn("消息发送异常,发送返回状态：{}", JSON.toJSONString(sendResult));
+                reSendMsg(msg, tag, isDefault, delayTimeLevel, isBroadcast, orderId);
             }
         } catch (Exception e) {
-            int interval = Integer.parseInt(ConfUtil.getPropertyOrDefault("mq_retry_interval", "60"));
-            log.warn("发送mq消息异常：{}，{}秒后重试间隔", e, interval);
-            String msg1 = msg;
-            executor.schedule(() -> {
-                sendMsg(msg1, tag, isDefault, delayTimeLevel, isBroadcast, orderId);
-            }, interval, TimeUnit.SECONDS);
+            log.warn("发送mq消息异常：", e);
+            reSendMsg(msg, tag, isDefault, delayTimeLevel, isBroadcast, orderId);
         }
+    }
+
+    /**
+     * 消息发送异常，触发重发机制
+     */
+    private void reSendMsg(String msg, MqTagsEnum tag, boolean isDefault, Integer delayTimeLevel, boolean isBroadcast, String orderId) {
+        int interval = Integer.parseInt(ConfUtil.getPropertyOrDefault("mq_retry_interval", "60"));
+        executor.schedule(() -> {
+            log.warn("消息发送异常，触发重发机制，消息内容：{}", msg);
+            sendMsg(msg, tag, isDefault, delayTimeLevel, isBroadcast, orderId);
+        }, interval, TimeUnit.SECONDS);
     }
 
     /**
@@ -248,6 +259,12 @@ public class RocketMqConsumer implements TransactionListener {
         return consume(msgs) ? ConsumeOrderlyStatus.SUCCESS : ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
     }
 
+    /**
+     * 消息消费具体处理流程
+     *
+     * @param msgs
+     * @return
+     */
     private boolean consume(List<MessageExt> msgs) {
         try {
             if (CollectionUtil.isNotEmpty(msgs)) {
