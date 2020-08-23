@@ -71,16 +71,17 @@
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.zaxxer</groupId>
-			<artifactId>HikariCP</artifactId>
-			<exclusions>
-				<exclusion>
-					<artifactId>slf4j-api</artifactId>
-					<groupId>org.slf4j</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
+		<!--	全文检索也没有找到Hikari原来springboot 2.0 默认连接池就是Hikari了，所以引用parents后不用专门加依赖	-->
+		<!--		<dependency>-->
+		<!--			<groupId>com.zaxxer</groupId>-->
+		<!--			<artifactId>HikariCP</artifactId>-->
+		<!--			<exclusions>-->
+		<!--				<exclusion>-->
+		<!--					<artifactId>slf4j-api</artifactId>-->
+		<!--					<groupId>org.slf4j</groupId>-->
+		<!--				</exclusion>-->
+		<!--			</exclusions>-->
+		<!--		</dependency>-->
 		<!--	分布式事务seata	-->
 		<dependency>
 			<groupId>com.alibaba.cloud</groupId>
