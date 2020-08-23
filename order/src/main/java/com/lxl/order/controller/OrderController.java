@@ -11,6 +11,11 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+    @GetMapping("/mqCreateOrder")
+    public ResponseInfo mqCreateOrder() {
+        return orderService.mqCreateOrder();
+    }
+
     @GetMapping("/atCreateOrder")
     public ResponseInfo atCreateOrder() {
         return orderService.atCreateOrder();
