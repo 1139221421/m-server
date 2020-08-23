@@ -313,6 +313,8 @@ public class RocketMqConsumer implements TransactionListener {
     @Override
     public LocalTransactionState executeLocalTransaction(Message msg, Object arg) {
         try {
+            // listener、fitter都不是Spring容器管理的，无法使用Spring注解的方式来注入对象
+            RedisCacheUtils redisCacheUtils = SpringContextUtils.getBean(RedisCacheUtils.class);
             // 业务操作
             String s = new String(msg.getBody());
             String msgId = getMsgId(s);
@@ -349,6 +351,7 @@ public class RocketMqConsumer implements TransactionListener {
     @Override
     public LocalTransactionState checkLocalTransaction(MessageExt msg) {
         try {
+            RedisCacheUtils redisCacheUtils = SpringContextUtils.getBean(RedisCacheUtils.class);
             List<ProducerDeal> beans = SpringContextUtils.getBeans(ProducerDeal.class);
             String s = new String(msg.getBody());
             String msgId = getMsgId(s);
