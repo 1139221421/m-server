@@ -55,6 +55,7 @@ public abstract class BaseCrudController<T extends BaseEntity, S extends ICrudSe
                         break;
                     case "update":
                         if (!"update".equals(crudConfig.updatePermission())) {
+                            setAnnotationValue(methods[i].getAnnotation(Permission.class), "value", crudConfig.updatePermission());
                         }
                         break;
                     case "delete":
