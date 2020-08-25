@@ -10,9 +10,10 @@ import com.lxl.common.feign.auth.AuthFeign;
 import com.lxl.common.feign.storage.StorageFeign;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.order.dao.OrderMapper;
-import com.lxl.order.service.OrderService;
+import com.lxl.order.service.IOrderService;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
+import com.lxl.web.support.CrudServiceImpl;
 import io.seata.rm.tcc.api.BusinessActionContext;
 import io.seata.spring.annotation.GlobalTransactional;
 import org.springframework.stereotype.Service;
@@ -21,9 +22,7 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 
 @Service
-public class OrderServiceImpl implements OrderService, ProducerDeal {
-    @Resource
-    private OrderMapper orderMapper;
+public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> implements IOrderService, ProducerDeal {
 
     @Resource
     private AuthFeign authFeign;
@@ -69,7 +68,7 @@ public class OrderServiceImpl implements OrderService, ProducerDeal {
         order.setOrderNum(jsonObject.getString("orderNum"));
         order.setOrderName("分布式事务rocketmq模拟下单");
         order.setOrderPrice(new BigDecimal(10));
-        orderMapper.insert(order);
+        save(order);
         // 返回true，通知mq可以消费消息,false表示回滚
         return true;
     }
@@ -84,7 +83,7 @@ public class OrderServiceImpl implements OrderService, ProducerDeal {
     public boolean check(String msg) {
         //验证订单是否添加
         JSONObject jsonObject = JSON.parseObject(msg);
-        return orderMapper.selectCount(Wrappers.<Order>lambdaQuery().eq(Order::getOrderNum, jsonObject.getString("orderNum"))) > 0;
+        return count(Wrappers.<Order>lambdaQuery().eq(Order::getOrderNum, jsonObject.getString("orderNum"))) > 0;
     }
 
     /**
@@ -99,7 +98,7 @@ public class OrderServiceImpl implements OrderService, ProducerDeal {
         Order order = new Order();
         order.setOrderName("分布式事务seata-at模拟下单");
         order.setOrderPrice(new BigDecimal(10));
-        orderMapper.insert(order);
+        save(order);
 
         // 扣款（未验证金额）
         ResponseInfo responseInfo = authFeign.reduceAccountBalance(1L, new BigDecimal(10));

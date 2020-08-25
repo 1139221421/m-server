@@ -1,10 +1,11 @@
 package com.lxl.auth.service.impl;
 
 import com.lxl.auth.service.AuthService;
-import com.lxl.auth.service.UserService;
+import com.lxl.auth.service.IUserService;
 import com.lxl.auth.vo.LoginRequestInfo;
 import com.lxl.auth.vo.LoginUserInfo;
 import com.lxl.common.constance.Constance;
+import com.lxl.common.entity.auth.User;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.web.redis.RedisCacheUtils;
 import com.lxl.web.support.OperatorBase;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Service;
 public class AuthServiceImpl implements AuthService {
 
     @Autowired
-    private UserService userService;
+    private IUserService userService;
 
     @Autowired
     private OperatorUtils operatorUtils;
@@ -27,7 +28,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public ResponseInfo login(LoginRequestInfo loginRequestInfo) {
         ResponseInfo responseInfo = new ResponseInfo(false);
-        LoginUserInfo loginUserInfo = userService.veryfiyUser(loginRequestInfo);
+        LoginUserInfo<User> loginUserInfo = userService.veryfiyUser(loginRequestInfo);
         if (loginUserInfo.getM() == null || !loginUserInfo.isSuccess()) {
             responseInfo.setMessage("用户名或者密码错误");
             return responseInfo;

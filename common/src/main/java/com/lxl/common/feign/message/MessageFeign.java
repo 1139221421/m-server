@@ -9,13 +9,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 @FeignClient(name = "message")
 public interface MessageFeign {
-    @RequestMapping(value = "/message/test", method = RequestMethod.GET)
-    ResponseInfo test();
 
     @RequestMapping(value = "/message/create", method = RequestMethod.POST)
     ResponseInfo create(@RequestBody Message message);
-
-    @RequestMapping(value = "/message/savePrepare", method = RequestMethod.POST)
-    ResponseInfo savePrepare(@RequestBody Message message);
 
 }

@@ -2,19 +2,17 @@ package com.lxl.storage.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.lxl.common.entity.storage.Sku;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.storage.dao.SkuMapper;
-import com.lxl.storage.service.SkuService;
+import com.lxl.storage.service.ISkuService;
 import com.lxl.web.mq.ConsumerDeal;
+import com.lxl.web.support.CrudServiceImpl;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-
 @Service
-public class SkuServiceImpl implements SkuService, ConsumerDeal {
-    @Resource
-    private SkuMapper skuMapper;
+public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implements ISkuService, ConsumerDeal {
 
     /**
      * 减库存
@@ -25,7 +23,7 @@ public class SkuServiceImpl implements SkuService, ConsumerDeal {
      */
     @Override
     public ResponseInfo reduceStock(Long id, Integer num) {
-        skuMapper.reduceStock(id, num);
+        baseMapper.reduceStock(id, num);
         return ResponseInfo.createSuccess();
     }
 

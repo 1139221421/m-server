@@ -2,11 +2,12 @@ package com.lxl.order.service;
 
 import com.lxl.common.entity.order.Order;
 import com.lxl.common.vo.ResponseInfo;
+import com.lxl.web.support.ICrudService;
 import io.seata.rm.tcc.api.BusinessActionContext;
 import io.seata.rm.tcc.api.BusinessActionContextParameter;
 import io.seata.rm.tcc.api.TwoPhaseBusinessAction;
 
-public interface OrderService {
+public interface IOrderService extends ICrudService<Order, Long> {
 
     ResponseInfo mqCreateOrder();
 

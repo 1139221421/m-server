@@ -2,7 +2,7 @@ package com.lxl.auth;
 
 import com.alibaba.fastjson.JSON;
 import com.lxl.auth.elastic.UserRepository;
-import com.lxl.auth.service.UserService;
+import com.lxl.auth.service.IUserService;
 import com.lxl.common.entity.auth.User;
 import com.lxl.web.elastic.ElasticCustomerOperate;
 import org.elasticsearch.action.search.SearchRequest;
@@ -39,7 +39,7 @@ import java.util.Optional;
 public class AuthApplicationTests extends BaseTest {
 
     @Autowired
-    private UserService userService;
+    private IUserService userService;
 
     @Autowired
     private UserRepository repository;
@@ -57,7 +57,7 @@ public class AuthApplicationTests extends BaseTest {
     public void syncUsers() {
         elasticCustomerOperate.indexOps(User.class).delete();
         elasticCustomerOperate.createAndPutMapping(User.class);
-        List<User> list = userService.findAll();
+        List<User> list = userService.list();
         repository.saveAll(list);
         Optional<User> optional = repository.findById(1L);
         User user = null;
