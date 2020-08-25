@@ -38,7 +38,7 @@ public interface ICrudService<T extends BaseEntity, ID> extends IService<T> {
      * @param id
      * @return
      */
-    ResponseInfo<T> delById(ID id);
+    ResponseInfo delById(ID id);
 
     /**
      * 通过id集合删除
@@ -46,7 +46,7 @@ public interface ICrudService<T extends BaseEntity, ID> extends IService<T> {
      * @param ids
      * @return
      */
-    ResponseInfo<T> delete(String ids);
+    ResponseInfo delete(String ids);
 
     /**
      * 通过id查询

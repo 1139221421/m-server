@@ -115,8 +115,8 @@ public class CrudServiceImpl<M extends BaseMapper<T>, T extends BaseEntity, ID e
      */
     @Override
     @Log(LogTypeEnum.DELETE)
-    public ResponseInfo<T> delete(String ids) {
-        ResponseInfo<T> result = new ResponseInfo<>(false);
+    public ResponseInfo delete(String ids) {
+        ResponseInfo result = new ResponseInfo<>(false);
         String[] idArray = ids.split(",");
         if (idArray.length == 0) {
             result.setMessage("请选择要删除的记录");
@@ -126,7 +126,7 @@ public class CrudServiceImpl<M extends BaseMapper<T>, T extends BaseEntity, ID e
                 idList.add(IdUtil.unwrap(Long.valueOf(s)));
             }
             QueryWrapper<T> ew = new QueryWrapper<>();
-            ResponseInfo<T> beforeResult = deleteBefore(idList, ew);
+            ResponseInfo beforeResult = deleteBefore(idList, ew);
             if (beforeResult != null) {
                 return beforeResult;
             }
@@ -143,14 +143,14 @@ public class CrudServiceImpl<M extends BaseMapper<T>, T extends BaseEntity, ID e
 
     @Override
     @Log(LogTypeEnum.DELETE)
-    public ResponseInfo<T> delById(ID id) {
+    public ResponseInfo delById(ID id) {
         id = (ID) IdUtil.unwrap((Long) id);
-        ResponseInfo<T> result = new ResponseInfo<>(false);
+        ResponseInfo result = new ResponseInfo<>(false);
         if (id == null) {
             result.setMessage("请选择要删除的记录");
             return result;
         }
-        ResponseInfo<T> beforeResult = deleteBefore(id);
+        ResponseInfo beforeResult = deleteBefore(id);
         if (beforeResult != null) {
             return beforeResult;
         }
@@ -255,11 +255,11 @@ public class CrudServiceImpl<M extends BaseMapper<T>, T extends BaseEntity, ID e
         return null;
     }
 
-    protected ResponseInfo<T> deleteBefore(ID id) {
+    protected ResponseInfo deleteBefore(ID id) {
         return null;
     }
 
-    protected ResponseInfo<T> deleteBefore(List<Long> ids, QueryWrapper<T> ew) {
+    protected ResponseInfo deleteBefore(List<Long> ids, QueryWrapper<T> ew) {
         return null;
     }
 
