@@ -3,6 +3,7 @@ package com.lxl.web.aop;
 import cn.hutool.core.util.NumberUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.lxl.common.enums.CodeEnum;
 import com.lxl.web.annotations.DisLockDeal;
@@ -47,19 +48,25 @@ public class DisLockAspect extends AspectBase {
                 log.error("分布式锁获取失败：lock-#p参数有误");
                 throw new RuntimeException(CodeEnum.PARAM_ERROR.getMessage());
             }
-            JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(pjp.getArgs()[Integer.parseInt(p)]));
-            int len = arr.length;
-            if (len > 1) {
-                // 获取下面的属性 暂不考虑数组情况
-                for (int i = 1; i < len; i++) {
-                    if (i < len - 1 && !(jsonObject.get(arr[i]) instanceof JSONArray)) {
-                        jsonObject = jsonObject.getJSONObject(arr[i]);
-                    } else {
-                        lockId = JSON.toJSONString(jsonObject.get(arr[i]));
+            String arg = JSON.toJSONString(pjp.getArgs()[Integer.parseInt(p)]);
+            try {
+                JSONObject jsonObject = JSON.parseObject(arg);
+                int len = arr.length;
+                if (len > 1) {
+                    // 获取下面的属性 暂不考虑数组情况
+                    for (int i = 1; i < len; i++) {
+                        if (i < len - 1 && !(jsonObject.get(arr[i]) instanceof JSONArray)) {
+                            jsonObject = jsonObject.getJSONObject(arr[i]);
+                        } else {
+                            lockId = JSON.toJSONString(jsonObject.get(arr[i]));
+                        }
                     }
+                } else {
+                    lockId = jsonObject.toJSONString();
                 }
-            } else {
-                lockId = jsonObject.toJSONString();
+            } catch (JSONException e) {
+                // 不是json对象
+                lockId = arg;
             }
         }
         if (StringUtils.isEmpty(lockId)) {

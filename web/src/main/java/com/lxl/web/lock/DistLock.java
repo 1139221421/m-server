@@ -45,8 +45,10 @@ public class DistLock {
             this.client.start();
             locks = new HashMap<>(32);
             batchlocks = new HashMap<>(32);
+            log.info("DistLock started...");
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("DistLock error：", e);
+            System.exit(-1);
         }
     }
 
