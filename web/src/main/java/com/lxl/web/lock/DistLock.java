@@ -1,24 +1,24 @@
 package com.lxl.web.lock;
 
 import com.lxl.utils.config.ConfUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessMultiLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 分布式锁
+ *
+ * @author
  */
+@Slf4j
 public class DistLock {
-    private static Logger LOG = LoggerFactory.getLogger(DistLock.class);
-
     private static final String ROOT_PATH = "lock";
 
     private static final int DEFAULT_CONNECT_TIMEOUT = 2000;
@@ -65,8 +65,9 @@ public class DistLock {
         boolean isLocked = lock.acquire(time, TimeUnit.SECONDS);
         if (isLocked) {
             this.locks.put(uniqueLockId, lock);
-            LOG.info("获取分布式锁成功,uniqueLockId:{}", uniqueLockId);
+            log.info("获取分布式锁成功,uniqueLockId:{}", uniqueLockId);
         }
+        log.info("获取分布式锁失败,uniqueLockId:{}", uniqueLockId);
         return isLocked;
     }
 
@@ -96,9 +97,9 @@ public class DistLock {
             try {
                 this.locks.remove(uniqueLockId);
                 lock.release();
-                LOG.info("单独解锁成功：" + uniqueLockId);
+                log.info("单独解锁成功：" + uniqueLockId);
             } catch (Exception e) {
-                LOG.error("单独解锁异常：" + e.getMessage(), e);
+                log.error("单独解锁异常：" + e.getMessage(), e);
                 throw e;
             }
         }
@@ -144,9 +145,9 @@ public class DistLock {
             try {
                 this.batchlocks.remove(batchKey);
                 mulLock.release();
-                LOG.info("批量解锁成功：" + batchKey);
+                log.info("批量解锁成功：" + batchKey);
             } catch (Exception e) {
-                LOG.error("批量解锁异常：" + e.getMessage(), e);
+                log.error("批量解锁异常：" + e.getMessage(), e);
                 throw e;
             }
         }

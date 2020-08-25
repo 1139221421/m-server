@@ -14,4 +14,7 @@ public interface AuthFeign {
     @RequestMapping(value = "/user/reduceAccountBalance", method = RequestMethod.GET)
     ResponseInfo reduceAccountBalance(@RequestParam("id") Long id, @RequestParam("reduce") BigDecimal reduce);
 
+    @RequestMapping(value = "/user/tccReduceAccountBalancePrepare", method = RequestMethod.GET)
+    ResponseInfo tccReduceAccountBalancePrepare(@RequestParam("id") Long id, @RequestParam("reduce") BigDecimal reduce);
+
 }

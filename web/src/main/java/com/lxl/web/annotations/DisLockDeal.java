@@ -5,9 +5,9 @@ import com.lxl.common.enums.MqTagsEnum;
 import java.lang.annotation.*;
 
 /**
- * @author raozhidan
- * @descirption
- * @date 2019-07-13
+ * 分布式锁注解方式
+ *
+ * @author
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
@@ -15,16 +15,12 @@ import java.lang.annotation.*;
 public @interface DisLockDeal {
 
     /**
-     * 处理业务
-     *
-     * @return
+     * 业务标签
      */
-    MqTagsEnum action();
+    MqTagsEnum tag();
 
     /**
-     * 需要取得具体某项数据名称
-     *
-     * @return
+     * 例如：xxx（xxx为锁名称）或者例如：#p0.id(第一个参数的id字段为锁名称)
      */
-    String lockIdName();
+    String lock();
 }

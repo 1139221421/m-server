@@ -31,5 +31,10 @@ public class OrderController extends BaseCrudController<Order, IOrderService, Lo
         return orderService.atCreateOrder();
     }
 
+    @ResponseBody
+    @GetMapping("/tccCreateOrder")
+    public ResponseInfo tccCreateOrder() {
+        return orderService.tccCreateOrder();
+    }
 
 }

@@ -12,4 +12,6 @@ public interface StorageFeign {
     @RequestMapping(value = "/sku/reduceStock", method = RequestMethod.GET)
     ResponseInfo reduceStock(@RequestParam("id") Long id, @RequestParam("num") Integer num);
 
+    @RequestMapping(value = "/sku/tccReduceStockPrepare", method = RequestMethod.GET)
+    ResponseInfo tccReduceStockPrepare(@RequestParam("id") Long id, @RequestParam("num") Integer num);
 }

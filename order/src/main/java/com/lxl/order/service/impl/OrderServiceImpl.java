@@ -16,11 +16,13 @@ import com.lxl.web.mq.RocketMqConsumer;
 import com.lxl.web.support.CrudServiceImpl;
 import io.seata.rm.tcc.api.BusinessActionContext;
 import io.seata.spring.annotation.GlobalTransactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
 
+@Slf4j
 @Service
 public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> implements IOrderService, ProducerDeal {
 
@@ -97,6 +99,7 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
         // 下单
         Order order = new Order();
         order.setOrderName("分布式事务seata-at模拟下单");
+        order.setOrderNum(UUID.fastUUID().toString(true));
         order.setOrderPrice(new BigDecimal(10));
         save(order);
 
@@ -122,12 +125,35 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
      */
     @Override
     public ResponseInfo tccCreateOrder() {
-        return null;
+        // 准备
+        Order order = new Order();
+        order.setOrderName("分布式事务seata-tcc模拟下单");
+        order.setOrderNum(UUID.fastUUID().toString(true));
+        order.setOrderPrice(new BigDecimal(10));
+        ResponseInfo responseInfo = tccCreateOrderPrepare(new BusinessActionContext(), order);
+        if (!responseInfo.getSuccess()) {
+            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
+        }
+        responseInfo = authFeign.tccReduceAccountBalancePrepare(1L, new BigDecimal(10L));
+        if (!responseInfo.getSuccess()) {
+            // 余额（检查和资源预留）
+            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
+        }
+        responseInfo = storageFeign.tccReduceStockPrepare(1L, 1);
+        if (!responseInfo.getSuccess()) {
+            // 库存（检查和资源预留）
+            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
+        }
+        responseInfo.setBusinessData(order);
+        return responseInfo;
     }
 
     @Override
-    public boolean tccCreateOrderPrepare(BusinessActionContext actionContext, Order order) {
-        return false;
+    public ResponseInfo tccCreateOrderPrepare(BusinessActionContext actionContext, Order order) {
+        // 创建订单不需要准备什么
+        String xid = actionContext.getXid();
+        log.info("tccCreateOrderPrepare,xid:{}", xid);
+        return ResponseInfo.createSuccess();
     }
 
     @Override

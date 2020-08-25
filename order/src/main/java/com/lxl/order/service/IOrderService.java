@@ -23,7 +23,7 @@ public interface IOrderService extends ICrudService<Order, Long> {
      * @return
      */
     @TwoPhaseBusinessAction(name = "create_order", commitMethod = "tccCreateOrderCommit", rollbackMethod = "tccCreateOrderRollback")
-    boolean tccCreateOrderPrepare(BusinessActionContext actionContext,
+    ResponseInfo tccCreateOrderPrepare(BusinessActionContext actionContext,
                                   @BusinessActionContextParameter(paramName = "order") Order order);
 
     /**
