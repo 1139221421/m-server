@@ -4,6 +4,7 @@ import com.lxl.common.enums.CodeEnum;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ResponseInfo<T> implements Serializable {
@@ -15,53 +16,13 @@ public class ResponseInfo<T> implements Serializable {
 
     protected String code;
 
-    protected Map<String, Object> data = new HashMap<String, Object>();
-
     protected T businessData;
 
-    public T getBusinessData() {
-        return businessData;
-    }
+    protected Map<String, Object> data = new HashMap<String, Object>();
 
-    public ResponseInfo<T> setBusinessData(T businessData) {
-        this.businessData = businessData;
-        return this;
-    }
-
-    public ResponseInfo<T> setCodeEnum(CodeEnum codeEnum) {
-        this.code = codeEnum.code;
-        this.message = codeEnum.message;
-        return this;
-    }
-
-    public static <T> ResponseInfo<T> createSuccess() {
-        return createCodeEnum(CodeEnum.SUCCESS);
-    }
-
-    public static <T> ResponseInfo<T> createSuccess(T data) {
-        ResponseInfo<T> success = createSuccess();
-        success.setBusinessData(data);
-        return success;
-    }
-
-    public static <T> ResponseInfo<T> createCodeEnum(CodeEnum codeEnum) {
-        ResponseInfo<T> responseInfo = new ResponseInfo<>();
-        responseInfo.setSuccess(codeEnum.isSuccess());
-        responseInfo.setCode(codeEnum.getCode());
-        responseInfo.setMessage(codeEnum.getMessage());
-        return responseInfo;
-    }
-
-    public static <T> ResponseInfo<T> createError() {
-        return createCodeEnum(CodeEnum.ERROR);
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
+    public void setPage(List<T> rows, Long total) {
+        addData("rows", rows);
+        addData("total", total);
     }
 
     public ResponseInfo() {
@@ -75,6 +36,27 @@ public class ResponseInfo<T> implements Serializable {
         this.code = code;
         this.message = message;
         success = false;
+    }
+
+    public void setPage(List<T> rows) {
+        addData("rows", rows);
+    }
+
+    public T getBusinessData() {
+        return businessData;
+    }
+
+    public ResponseInfo<T> setBusinessData(T businessData) {
+        this.businessData = businessData;
+        return this;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public ResponseInfo<T> addData(String key, Object value) {
@@ -108,4 +90,33 @@ public class ResponseInfo<T> implements Serializable {
         this.data = data;
         return this;
     }
+
+    public ResponseInfo<T> setCodeEnum(CodeEnum codeEnum) {
+        this.code = codeEnum.code;
+        this.message = codeEnum.message;
+        return this;
+    }
+
+    public static <T> ResponseInfo<T> createSuccess() {
+        return createCodeEnum(CodeEnum.SUCCESS);
+    }
+
+    public static <T> ResponseInfo<T> createSuccess(T data) {
+        ResponseInfo<T> success = createSuccess();
+        success.setBusinessData(data);
+        return success;
+    }
+
+    public static <T> ResponseInfo<T> createCodeEnum(CodeEnum codeEnum) {
+        ResponseInfo<T> responseInfo = new ResponseInfo<>();
+        responseInfo.setSuccess(codeEnum.isSuccess());
+        responseInfo.setCode(codeEnum.getCode());
+        responseInfo.setMessage(codeEnum.getMessage());
+        return responseInfo;
+    }
+
+    public static <T> ResponseInfo<T> createError() {
+        return createCodeEnum(CodeEnum.ERROR);
+    }
+
 }
