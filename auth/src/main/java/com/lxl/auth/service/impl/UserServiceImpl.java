@@ -19,6 +19,7 @@ import com.lxl.utils.common.PasswordUtil;
 import com.lxl.web.annotations.DisLockDeal;
 import com.lxl.web.elastic.ElasticCustomerOperate;
 import com.lxl.web.support.CrudServiceImpl;
+import io.seata.core.context.RootContext;
 import io.seata.rm.tcc.api.BusinessActionContext;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
@@ -86,29 +87,33 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
      */
     @Override
     @DisLockDeal(tag = MqTagsEnum.REDUCE_ACCOUNT_BALANCE, lock = "#p1")
-    public ResponseInfo tccReduceAccountBalancePrepare(BusinessActionContext actionContext, Long id, BigDecimal reduce) {
-        BigDecimal balance = (BigDecimal) redisCacheUtils.hGet(Constance.User.ACCOUNT_BALANCE, id.toString());
+    public boolean tccReduceAccountBalancePrepare(BusinessActionContext actionContext, Long id, BigDecimal reduce) {
+        log.info("分布式事务seata-tcc模拟下单，检查账户余额操作，xid：{}", RootContext.getXID());
+        Long balance = (Long) redisCacheUtils.hGet(Constance.User.ACCOUNT_BALANCE, id.toString());
         if (balance == null) {
             // 初始化账户余额
             balance = initAccountBalance(id);
         }
-        if (balance == null || balance.compareTo(reduce) < 0) {
-            // 检查紫荆是否充足
-            return ResponseInfo.createCodeEnum(CodeEnum.ERROR).setMessage("账户余额不足");
+        long m = reduce.multiply(new BigDecimal(100)).longValue();
+        if (balance == null || balance < m) {
+            // 检查余额是否充足
+            throw new RuntimeException("账户余额不足");
         }
         // 冻结账户余额
-        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id.toString(), -reduce.doubleValue());
-        return ResponseInfo.createSuccess();
+        redisCacheUtils.hSet(Constance.User.ACCOUNT_BALANCE, id.toString(), balance - m);
+        return true;
     }
 
     @Override
     public boolean tccReduceAccountBalanceCommit(BusinessActionContext actionContext) {
-        return false;
+        log.info("分布式事务seata-tcc模拟下单，提交账户余额操作，xid：{}", RootContext.getXID());
+        return true;
     }
 
     @Override
     public boolean tccReduceAccountBalanceRollback(BusinessActionContext actionContext) {
-        return false;
+        log.info("分布式事务seata-tcc模拟下单失败，回滚账户余额操作，xid：{}", RootContext.getXID());
+        return true;
     }
 
     /**
@@ -116,11 +121,12 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
      *
      * @param id
      */
-    private BigDecimal initAccountBalance(Long id) {
+    private Long initAccountBalance(Long id) {
         User user = findById(id);
         if (user != null) {
-            redisCacheUtils.hSet(Constance.User.ACCOUNT_BALANCE, id.toString(), user.getAccountBalance().doubleValue());
-            return user.getAccountBalance();
+            long balance = user.getAccountBalance().multiply(new BigDecimal(100)).longValue();
+            redisCacheUtils.hSet(Constance.User.ACCOUNT_BALANCE, id.toString(), balance);
+            return balance;
         }
         return null;
     }

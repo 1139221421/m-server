@@ -14,6 +14,7 @@ import com.lxl.order.service.IOrderService;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
 import com.lxl.web.support.CrudServiceImpl;
+import io.seata.core.context.RootContext;
 import io.seata.rm.tcc.api.BusinessActionContext;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
@@ -120,50 +121,56 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
 
     /**
      * 分布式事务seata-tcc模拟下单
+     * 注意：
+     * 空回滚：Try未执行，Cancel 执行了
+     * 幂等：多次调用方法（Confirm）
+     * 悬挂：Cancel接口 比 Try接口先执行
      *
      * @return
      */
     @Override
+    @GlobalTransactional
     public ResponseInfo tccCreateOrder() {
         // 准备
         Order order = new Order();
         order.setOrderName("分布式事务seata-tcc模拟下单");
         order.setOrderNum(UUID.fastUUID().toString(true));
         order.setOrderPrice(new BigDecimal(10));
-        ResponseInfo responseInfo = tccCreateOrderPrepare(new BusinessActionContext(), order);
-        if (!responseInfo.getSuccess()) {
-            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
+        if (!tccCreateOrderPrepare(new BusinessActionContext(), order)) {
+            throw new RuntimeException("分布式事务seata-tcc模拟下单");
         }
-        responseInfo = authFeign.tccReduceAccountBalancePrepare(1L, new BigDecimal(10L));
-        if (!responseInfo.getSuccess()) {
-            // 余额（检查和资源预留）
-            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
-        }
-        responseInfo = storageFeign.tccReduceStockPrepare(1L, 1);
-        if (!responseInfo.getSuccess()) {
-            // 库存（检查和资源预留）
-            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
-        }
-        responseInfo.setBusinessData(order);
-        return responseInfo;
+        return ResponseInfo.createSuccess();
+//        ResponseInfo responseInfo = authFeign.tccReduceAccountBalancePrepare(1L, new BigDecimal(10L));
+//        if (!responseInfo.getSuccess()) {
+//            // 余额（检查和资源预留）
+//            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
+//        }
+//        responseInfo = storageFeign.tccReduceStockPrepare(1L, 1);
+//        if (!responseInfo.getSuccess()) {
+//            // 库存（检查和资源预留）
+//            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
+//        }
+//        responseInfo.setBusinessData(order);
+//        return responseInfo;
     }
 
     @Override
-    public ResponseInfo tccCreateOrderPrepare(BusinessActionContext actionContext, Order order) {
+    public boolean tccCreateOrderPrepare(BusinessActionContext actionContext, Order order) {
         // 创建订单不需要准备什么
-        String xid = actionContext.getXid();
-        log.info("tccCreateOrderPrepare,xid:{}", xid);
-        return ResponseInfo.createSuccess();
+        log.info("分布式事务seata-tcc模拟下单，检查下单操作，xid：{}", RootContext.getXID());
+        return true;
     }
 
     @Override
     public boolean tccCreateOrderCommit(BusinessActionContext actionContext) {
-        return false;
+        log.info("分布式事务seata-tcc模拟下单，提交下单操作，xid：{}", actionContext.getXid());
+        return true;
     }
 
     @Override
     public boolean tccCreateOrderRollback(BusinessActionContext actionContext) {
-        return false;
+        log.info("分布式事务seata-tcc模拟下单失败，回滚下单操作，xid：{}", actionContext.getXid());
+        return true;
     }
 
     /**
