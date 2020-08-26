@@ -11,11 +11,10 @@ import com.lxl.common.feign.storage.StorageFeign;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.order.dao.OrderMapper;
 import com.lxl.order.service.IOrderService;
+import com.lxl.order.service.ITccOrderService;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
 import com.lxl.web.support.CrudServiceImpl;
-import io.seata.core.context.RootContext;
-import io.seata.rm.tcc.api.BusinessActionContext;
 import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +31,9 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
 
     @Resource
     private StorageFeign storageFeign;
+
+    @Resource
+    private ITccOrderService tccCreateOrderPrepare;
 
     @Resource
     private RocketMqConsumer rocketMqConsumer;
@@ -131,13 +133,12 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
     @Override
     @GlobalTransactional
     public ResponseInfo tccCreateOrder() {
-        // 准备
         Order order = new Order();
         order.setOrderName("分布式事务seata-tcc模拟下单");
         order.setOrderNum(UUID.fastUUID().toString(true));
         order.setOrderPrice(new BigDecimal(10));
-        if (!tccCreateOrderPrepare(new BusinessActionContext(), order)) {
-            throw new RuntimeException("分布式事务seata-tcc模拟下单");
+        if (!tccCreateOrderPrepare.tccCreateOrderPrepare(order)) {
+            throw new RuntimeException("分布式事务seata-tcc模拟下单准备失败");
         }
         return ResponseInfo.createSuccess();
 //        ResponseInfo responseInfo = authFeign.tccReduceAccountBalancePrepare(1L, new BigDecimal(10L));
@@ -152,25 +153,6 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
 //        }
 //        responseInfo.setBusinessData(order);
 //        return responseInfo;
-    }
-
-    @Override
-    public boolean tccCreateOrderPrepare(BusinessActionContext actionContext, Order order) {
-        // 创建订单不需要准备什么
-        log.info("分布式事务seata-tcc模拟下单，检查下单操作，xid：{}", RootContext.getXID());
-        return true;
-    }
-
-    @Override
-    public boolean tccCreateOrderCommit(BusinessActionContext actionContext) {
-        log.info("分布式事务seata-tcc模拟下单，提交下单操作，xid：{}", actionContext.getXid());
-        return true;
-    }
-
-    @Override
-    public boolean tccCreateOrderRollback(BusinessActionContext actionContext) {
-        log.info("分布式事务seata-tcc模拟下单失败，回滚下单操作，xid：{}", actionContext.getXid());
-        return true;
     }
 
     /**
