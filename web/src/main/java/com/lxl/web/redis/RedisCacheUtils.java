@@ -405,7 +405,6 @@ public class RedisCacheUtils {
         }
         RedisTemplate template = new StringRedisTemplate(redisConnectionFactory);
         template.setValueSerializer(redisSerializer);
-        template.setHashValueSerializer(redisSerializer);
         return template;
     }
 }

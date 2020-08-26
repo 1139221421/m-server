@@ -1,5 +1,6 @@
 package com.lxl.web.redis;
 
+import com.alibaba.fastjson.support.spring.FastJsonRedisSerializer;
 import com.alibaba.fastjson.support.spring.GenericFastJsonRedisSerializer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,6 +17,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.*;
 
+import java.time.Duration;
+
 /**
  * redis配置
  */
@@ -25,6 +28,9 @@ import org.springframework.data.redis.serializer.*;
 public class JedisFactoryConfig extends CachingConfigurerSupport {
     @Value("${spring.redis.serializerType:1}")
     private int serializerType;
+    //默认过期时间（秒）
+    @Value("${spring.redis.expirationSecond:0}")
+    private int expirationSecondTime;
 
     /**
      * 设置@cacheable 序列化方式
@@ -35,6 +41,10 @@ public class JedisFactoryConfig extends CachingConfigurerSupport {
     public RedisCacheConfiguration redisCacheConfiguration() {
         RedisCacheConfiguration configuration = RedisCacheConfiguration.defaultCacheConfig();
         configuration = configuration.serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(getRedisSerializer()));
+        if (expirationSecondTime > 0) {
+            // 默认过期时间
+            configuration = configuration.entryTtl(Duration.ofSeconds(expirationSecondTime));
+        }
         return configuration;
     }
 
@@ -46,9 +56,18 @@ public class JedisFactoryConfig extends CachingConfigurerSupport {
     @Bean
     public RedisTemplate redisTemplate(@Qualifier("jedisFactory") RedisConnectionFactory factory) {
         StringRedisTemplate template = new StringRedisTemplate(factory);
-        RedisSerializer redisSerializer = getRedisSerializer();
+        RedisSerializer redisSerializer = null;
+        switch (serializerType) {
+            case 1:
+                //使用FastJSON序列化
+                redisSerializer = new FastJsonRedisSerializer(Object.class);
+                break;
+            default:
+                //使用Jackson序列化
+                redisSerializer = new Jackson2JsonRedisSerializer(Object.class);
+                break;
+        }
         template.setValueSerializer(redisSerializer);
-        template.setHashValueSerializer(redisSerializer);
         template.setKeySerializer(new StringRedisSerializer());
         return template;
     }
