@@ -4,7 +4,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.lxl.common.constance.Constance;
 import com.lxl.common.entity.storage.Sku;
-import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.storage.dao.SkuMapper;
@@ -37,14 +36,13 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
     /**
      * 库存校验和冻结(需要考虑并发)
      *
-     * @param actionContext
      * @param id
      * @param num
      * @return
      */
     @Override
     @DisLockDeal(tag = MqTagsEnum.REDUCE_STOCK, lock = "#p1")
-    public boolean tccReduceStockPrepare(BusinessActionContext actionContext, Long id, Integer num) {
+    public boolean tccReduceStockPrepare(Long id, Integer num) {
         log.info("分布式事务seata-tcc模拟下单，检查库存操作，xid：{}", RootContext.getXID());
         Integer stock = (Integer) redisCacheUtils.hGet(Constance.Storage.STOCK, id.toString());
         if (stock == null) {
@@ -62,13 +60,13 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
 
     @Override
     public boolean tccReduceStockCommit(BusinessActionContext actionContext) {
-        log.info("分布式事务seata-tcc模拟下单，提交库存操作，xid：{}", RootContext.getXID());
+        log.info("分布式事务seata-tcc模拟下单，提交库存操作，xid：{}", actionContext.getXid());
         return true;
     }
 
     @Override
     public boolean tccReduceStockRollback(BusinessActionContext actionContext) {
-        log.info("分布式事务seata-tcc模拟下单失败，回滚库存操作，xid：{}", RootContext.getXID());
+        log.info("分布式事务seata-tcc模拟下单失败，回滚库存操作，xid：{}", actionContext.getXid());
         return true;
     }
 

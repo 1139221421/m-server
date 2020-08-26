@@ -127,6 +127,10 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
      * 空回滚：Try未执行，Cancel 执行了
      * 幂等：多次调用方法（Confirm）
      * 悬挂：Cancel接口 比 Try接口先执行
+     * 步骤：
+     * 1.接口层 类添加@LocalTCC注解，并实现prepare（添加@TwoPhaseBusinessAction注解，指定commit和rollback） commit rollback三个方法
+     * 2.实现层 根据业务实现上面的三个方法
+     * 3.业务层调用接口层的prepare方法，并添加@GlobalTransactional注解（多服务调用重复上述步骤即可）
      *
      * @return
      */
@@ -137,22 +141,22 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
         order.setOrderName("分布式事务seata-tcc模拟下单");
         order.setOrderNum(UUID.fastUUID().toString(true));
         order.setOrderPrice(new BigDecimal(10));
+        // @GlobalTransactional和@TwoPhaseBusinessAction在同一类问题：无法触发到父接口类的@TwoPhaseBusinessAction导致事务无法开启
         if (!tccCreateOrderPrepare.tccCreateOrderPrepare(order)) {
             throw new RuntimeException("分布式事务seata-tcc模拟下单准备失败");
         }
-        return ResponseInfo.createSuccess();
-//        ResponseInfo responseInfo = authFeign.tccReduceAccountBalancePrepare(1L, new BigDecimal(10L));
-//        if (!responseInfo.getSuccess()) {
-//            // 余额（检查和资源预留）
-//            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
-//        }
-//        responseInfo = storageFeign.tccReduceStockPrepare(1L, 1);
-//        if (!responseInfo.getSuccess()) {
-//            // 库存（检查和资源预留）
-//            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
-//        }
-//        responseInfo.setBusinessData(order);
-//        return responseInfo;
+        ResponseInfo responseInfo = authFeign.tccReduceAccountBalancePrepare(1L, new BigDecimal(10L));
+        if (!responseInfo.getSuccess()) {
+            // 余额（检查和资源预留）
+            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
+        }
+        responseInfo = storageFeign.tccReduceStockPrepare(1L, 1);
+        if (!responseInfo.getSuccess()) {
+            // 库存（检查和资源预留）
+            throw new RuntimeException("分布式事务seata-tcc模拟下单：" + responseInfo.getMessage());
+        }
+        responseInfo.setBusinessData(order);
+        return responseInfo;
     }
 
     /**

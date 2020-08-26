@@ -80,14 +80,13 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
     /**
      * 余额校验和冻结(需要考虑并发)
      *
-     * @param actionContext
      * @param id
      * @param reduce
      * @return
      */
     @Override
     @DisLockDeal(tag = MqTagsEnum.REDUCE_ACCOUNT_BALANCE, lock = "#p1")
-    public boolean tccReduceAccountBalancePrepare(BusinessActionContext actionContext, Long id, BigDecimal reduce) {
+    public boolean tccReduceAccountBalancePrepare(Long id, BigDecimal reduce) {
         log.info("分布式事务seata-tcc模拟下单，检查账户余额操作，xid：{}", RootContext.getXID());
         Long balance = (Long) redisCacheUtils.hGet(Constance.User.ACCOUNT_BALANCE, id.toString());
         if (balance == null) {
@@ -106,13 +105,13 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
 
     @Override
     public boolean tccReduceAccountBalanceCommit(BusinessActionContext actionContext) {
-        log.info("分布式事务seata-tcc模拟下单，提交账户余额操作，xid：{}", RootContext.getXID());
+        log.info("分布式事务seata-tcc模拟下单，提交账户余额操作，xid：{}", actionContext.getXid());
         return true;
     }
 
     @Override
     public boolean tccReduceAccountBalanceRollback(BusinessActionContext actionContext) {
-        log.info("分布式事务seata-tcc模拟下单失败，回滚账户余额操作，xid：{}", RootContext.getXID());
+        log.info("分布式事务seata-tcc模拟下单失败，回滚账户余额操作，xid：{}", actionContext.getXid());
         return true;
     }
 

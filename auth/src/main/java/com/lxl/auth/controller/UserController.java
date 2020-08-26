@@ -32,7 +32,7 @@ public class UserController extends BaseCrudController<User, IUserService, Long>
     @ResponseBody
     @GetMapping("/tccReduceAccountBalancePrepare")
     public ResponseInfo tccReduceAccountBalancePrepare(@RequestParam("id") Long id, @RequestParam("reduce") BigDecimal reduce) {
-        return ResponseInfo.createSuccess().setSuccess(userService.tccReduceAccountBalancePrepare(new BusinessActionContext(), id, reduce));
+        return ResponseInfo.createSuccess().setSuccess(userService.tccReduceAccountBalancePrepare(id, reduce));
     }
 
 }

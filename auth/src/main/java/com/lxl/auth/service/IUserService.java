@@ -11,7 +11,6 @@ import io.seata.rm.tcc.api.LocalTCC;
 import io.seata.rm.tcc.api.TwoPhaseBusinessAction;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @LocalTCC
 public interface IUserService extends ICrudService<User, Long> {
@@ -23,12 +22,10 @@ public interface IUserService extends ICrudService<User, Long> {
     /**
      * 检查和资源预留
      *
-     * @param actionContext
      * @return
      */
     @TwoPhaseBusinessAction(name = "create_order", commitMethod = "tccReduceAccountBalanceCommit", rollbackMethod = "tccReduceAccountBalanceRollback")
-    boolean tccReduceAccountBalancePrepare(BusinessActionContext actionContext,
-                                           @BusinessActionContextParameter(paramName = "id") Long id,
+    boolean tccReduceAccountBalancePrepare(@BusinessActionContextParameter(paramName = "id") Long id,
                                            @BusinessActionContextParameter(paramName = "reduce") BigDecimal reduce);
 
     /**

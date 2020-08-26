@@ -68,8 +68,9 @@ public class DistLock {
         if (isLocked) {
             this.locks.put(uniqueLockId, lock);
             log.info("获取分布式锁成功,uniqueLockId:{}", uniqueLockId);
+        } else {
+            log.info("获取分布式锁失败,uniqueLockId:{}", uniqueLockId);
         }
-        log.info("获取分布式锁失败,uniqueLockId:{}", uniqueLockId);
         return isLocked;
     }
 

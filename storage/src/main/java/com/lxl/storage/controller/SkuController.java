@@ -34,7 +34,7 @@ public class SkuController extends BaseCrudController<Sku, ISkuService, Long> {
     @ResponseBody
     @GetMapping("/tccReduceStockPrepare")
     public ResponseInfo tccReduceStockPrepare(@RequestParam("id") Long id, @RequestParam("num") Integer num) {
-        return ResponseInfo.createSuccess().setSuccess(skuService.tccReduceStockPrepare(new BusinessActionContext(), id, num));
+        return ResponseInfo.createSuccess().setSuccess(skuService.tccReduceStockPrepare(id, num));
     }
 
 }

@@ -16,12 +16,10 @@ public interface ISkuService extends ICrudService<Sku, Long> {
     /**
      * 检查和资源预留
      *
-     * @param actionContext
      * @return
      */
     @TwoPhaseBusinessAction(name = "create_order", commitMethod = "tccReduceStockCommit", rollbackMethod = "tccReduceStockRollback")
-    boolean tccReduceStockPrepare(BusinessActionContext actionContext,
-                                  @BusinessActionContextParameter(paramName = "id") Long id,
+    boolean tccReduceStockPrepare(@BusinessActionContextParameter(paramName = "id") Long id,
                                   @BusinessActionContextParameter(paramName = "num") Integer num);
 
     /**
