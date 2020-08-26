@@ -1,5 +1,6 @@
 package com.lxl.order.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.lxl.common.entity.order.Order;
 import com.lxl.order.service.IOrderService;
@@ -34,7 +35,7 @@ public class TccOrderServiceImpl implements ITccOrderService {
 
     @Override
     public boolean tccCreateOrderRollback(BusinessActionContext actionContext) {
-        Order order = (Order) actionContext.getActionContext("order");
+        Order order = JSON.parseObject(JSON.toJSONString(actionContext.getActionContext("order")), Order.class);
         orderService.remove(Wrappers.<Order>lambdaQuery().eq(Order::getOrderNum, order.getOrderNum()));
         log.info("分布式事务seata-tcc模拟下单失败，回滚下单操作，xid：{}", actionContext.getXid());
         return true;

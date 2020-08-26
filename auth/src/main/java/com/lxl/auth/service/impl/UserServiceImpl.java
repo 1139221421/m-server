@@ -77,7 +77,7 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
      * @return
      */
     @Override
-    @DisLockDeal(tag = MqTagsEnum.REDUCE_ACCOUNT_BALANCE, lock = "#p1")
+    @DisLockDeal(tag = MqTagsEnum.REDUCE_ACCOUNT_BALANCE, lock = "#p0")
     public boolean tccReduceAccountBalancePrepare(Long id, BigDecimal reduce) {
         log.info("分布式事务seata-tcc模拟下单，检查账户余额操作，xid：{}", RootContext.getXID());
         double m = reduce.doubleValue();
@@ -97,8 +97,8 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
 
     @Override
     public boolean tccReduceAccountBalanceCommit(BusinessActionContext actionContext) {
-        Long id = (Long) actionContext.getActionContext("id");
-        BigDecimal reduce = (BigDecimal) actionContext.getActionContext("reduce");
+        Long id = Long.valueOf(actionContext.getActionContext("id").toString());
+        BigDecimal reduce = new BigDecimal(actionContext.getActionContext("reduce").toString());
         reduceAccountBalance(id, reduce);
         log.info("分布式事务seata-tcc模拟下单，提交账户余额操作，xid：{}", actionContext.getXid());
         return true;
@@ -106,9 +106,9 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
 
     @Override
     public boolean tccReduceAccountBalanceRollback(BusinessActionContext actionContext) {
-        String id = (String) actionContext.getActionContext("id");
-        BigDecimal reduce = (BigDecimal) actionContext.getActionContext("reduce");
-        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id, reduce.floatValue());
+        Long id = Long.valueOf(actionContext.getActionContext("id").toString());
+        BigDecimal reduce = new BigDecimal(actionContext.getActionContext("reduce").toString());
+        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id.toString(), reduce.doubleValue());
         log.info("分布式事务seata-tcc模拟下单失败，回滚账户余额操作，xid：{}", actionContext.getXid());
         return true;
     }
