@@ -1,7 +1,6 @@
 package com.lxl.auth.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.lxl.auth.dao.UserMapper;
 import com.lxl.auth.elastic.UserRepository;
@@ -10,10 +9,7 @@ import com.lxl.auth.vo.LoginRequestInfo;
 import com.lxl.auth.vo.LoginUserInfo;
 import com.lxl.common.constance.Constance;
 import com.lxl.common.entity.auth.User;
-import com.lxl.common.entity.message.Message;
-import com.lxl.common.enums.CodeEnum;
 import com.lxl.common.enums.MqTagsEnum;
-import com.lxl.common.feign.message.MessageFeign;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.utils.common.PasswordUtil;
 import com.lxl.web.annotations.DisLockDeal;
@@ -21,15 +17,11 @@ import com.lxl.web.elastic.ElasticCustomerOperate;
 import com.lxl.web.support.CrudServiceImpl;
 import io.seata.core.context.RootContext;
 import io.seata.rm.tcc.api.BusinessActionContext;
-import io.seata.spring.annotation.GlobalTransactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -88,29 +80,35 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
     @DisLockDeal(tag = MqTagsEnum.REDUCE_ACCOUNT_BALANCE, lock = "#p1")
     public boolean tccReduceAccountBalancePrepare(Long id, BigDecimal reduce) {
         log.info("分布式事务seata-tcc模拟下单，检查账户余额操作，xid：{}", RootContext.getXID());
-        Long balance = (Long) redisCacheUtils.hGet(Constance.User.ACCOUNT_BALANCE, id.toString());
+        double m = reduce.doubleValue();
+        Double balance = (Double) redisCacheUtils.hGet(Constance.User.ACCOUNT_BALANCE, id.toString());
         if (balance == null) {
             // 初始化账户余额
             balance = initAccountBalance(id);
         }
-        long m = reduce.multiply(new BigDecimal(100)).longValue();
         if (balance == null || balance < m) {
             // 检查余额是否充足
             throw new RuntimeException("账户余额不足");
         }
         // 冻结账户余额
-        redisCacheUtils.hSet(Constance.User.ACCOUNT_BALANCE, id.toString(), balance - m);
+        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id.toString(), -m);
         return true;
     }
 
     @Override
     public boolean tccReduceAccountBalanceCommit(BusinessActionContext actionContext) {
+        Long id = (Long) actionContext.getActionContext("id");
+        BigDecimal reduce = (BigDecimal) actionContext.getActionContext("reduce");
+        reduceAccountBalance(id, reduce);
         log.info("分布式事务seata-tcc模拟下单，提交账户余额操作，xid：{}", actionContext.getXid());
         return true;
     }
 
     @Override
     public boolean tccReduceAccountBalanceRollback(BusinessActionContext actionContext) {
+        String id = (String) actionContext.getActionContext("id");
+        BigDecimal reduce = (BigDecimal) actionContext.getActionContext("reduce");
+        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id, reduce.floatValue());
         log.info("分布式事务seata-tcc模拟下单失败，回滚账户余额操作，xid：{}", actionContext.getXid());
         return true;
     }
@@ -120,12 +118,11 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
      *
      * @param id
      */
-    private Long initAccountBalance(Long id) {
+    private Double initAccountBalance(Long id) {
         User user = findById(id);
         if (user != null) {
-            long balance = user.getAccountBalance().multiply(new BigDecimal(100)).longValue();
-            redisCacheUtils.hSet(Constance.User.ACCOUNT_BALANCE, id.toString(), balance);
-            return balance;
+            redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id.toString(), user.getAccountBalance().doubleValue());
+            return user.getAccountBalance().doubleValue();
         }
         return null;
     }

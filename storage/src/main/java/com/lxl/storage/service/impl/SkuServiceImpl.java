@@ -60,12 +60,18 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
 
     @Override
     public boolean tccReduceStockCommit(BusinessActionContext actionContext) {
+        Long id = (Long) actionContext.getActionContext("id");
+        Integer num = (Integer) actionContext.getActionContext("num");
+        reduceStock(id, num);
         log.info("分布式事务seata-tcc模拟下单，提交库存操作，xid：{}", actionContext.getXid());
         return true;
     }
 
     @Override
     public boolean tccReduceStockRollback(BusinessActionContext actionContext) {
+        String id = (String) actionContext.getActionContext("id");
+        Integer num = (Integer) actionContext.getActionContext("num");
+        redisCacheUtils.hIncrBy(Constance.Storage.STOCK, id, num);
         log.info("分布式事务seata-tcc模拟下单失败，回滚库存操作，xid：{}", actionContext.getXid());
         return true;
     }
@@ -96,7 +102,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
     private Integer initStock(Long id) {
         Sku sku = findById(id);
         if (sku != null) {
-            redisCacheUtils.hSet(Constance.Storage.STOCK, id.toString(), sku.getStock());
+            redisCacheUtils.hIncrBy(Constance.Storage.STOCK, id.toString(), sku.getStock());
             return sku.getStock();
         }
         return null;
