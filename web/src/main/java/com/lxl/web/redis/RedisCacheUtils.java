@@ -206,6 +206,16 @@ public class RedisCacheUtils {
      * 增加值
      *
      * @param key
+     * @param val
+     */
+    public Double hIncrBy(String key, double val) {
+        return redisTemplate.opsForValue().increment(key, val);
+    }
+
+    /**
+     * 增加值
+     *
+     * @param key
      * @param hashKey
      * @param val
      */

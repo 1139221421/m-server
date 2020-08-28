@@ -44,7 +44,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
     @DisLockDeal(tag = MqTagsEnum.REDUCE_STOCK, lock = "#p0")
     public boolean tccReduceStockPrepare(Long id, Integer num) {
         log.info("分布式事务seata-tcc模拟下单，检查库存操作，xid：{}", RootContext.getXID());
-        Integer stock = (Integer) redisCacheUtils.hGet(Constance.Storage.STOCK, id.toString());
+        Integer stock = redisCacheUtils.getCacheObject(Constance.Storage.STOCK + id, Integer.class);
         if (stock == null) {
             // 初始化库存
             stock = initStock(id);
@@ -54,7 +54,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
             throw new RuntimeException("库存不足");
         }
         // 库存冻结
-        redisCacheUtils.hIncrBy(Constance.Storage.STOCK, id.toString(), -num);
+        redisCacheUtils.hIncrBy(Constance.Storage.STOCK + id, -num);
         return true;
     }
 
@@ -71,7 +71,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
     public boolean tccReduceStockRollback(BusinessActionContext actionContext) {
         Long id = Long.valueOf(actionContext.getActionContext("id").toString());
         Integer num = (Integer) actionContext.getActionContext("num");
-        redisCacheUtils.hIncrBy(Constance.Storage.STOCK, id.toString(), num);
+        redisCacheUtils.hIncrBy(Constance.Storage.STOCK + id, num);
         log.info("分布式事务seata-tcc模拟下单失败，回滚库存操作，xid：{}", actionContext.getXid());
         return true;
     }
@@ -102,7 +102,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
     private Integer initStock(Long id) {
         Sku sku = findById(id);
         if (sku != null) {
-            redisCacheUtils.hIncrBy(Constance.Storage.STOCK, id.toString(), sku.getStock());
+            redisCacheUtils.hIncrBy(Constance.Storage.STOCK + id, sku.getStock());
             return sku.getStock();
         }
         return null;

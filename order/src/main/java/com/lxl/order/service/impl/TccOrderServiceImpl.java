@@ -27,7 +27,7 @@ public class TccOrderServiceImpl implements ITccOrderService {
 
     @Override
     public boolean tccCreateOrderCommit(BusinessActionContext actionContext) {
-        Order order = (Order) actionContext.getActionContext("order");
+        Order order = JSON.parseObject(JSON.toJSONString(actionContext.getActionContext("order")), Order.class);
         orderService.save(order);
         log.info("分布式事务seata-tcc模拟下单，提交下单操作，xid：{}", actionContext.getXid());
         return true;

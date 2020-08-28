@@ -6,7 +6,7 @@ public interface Constance {
         String USER_SESSION = "UserSession:";
         String AUTHORIZATION = "Authorization";
         String ATTRIBUTE_KEY = "loginUser";
-        String ACCOUNT_BALANCE = "account_balance";
+        String ACCOUNT_BALANCE = "account_balance_";
     }
 
     interface LoginType {
@@ -14,7 +14,7 @@ public interface Constance {
     }
 
     interface Storage {
-        String STOCK = "stock";
+        String STOCK = "stock_";
     }
 
 }
