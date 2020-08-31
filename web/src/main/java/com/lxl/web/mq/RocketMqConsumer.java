@@ -3,7 +3,7 @@ package com.lxl.web.mq;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
-import com.lxl.common.enums.MqTagsEnum;
+import com.lxl.common.enums.TagsEnum;
 import com.lxl.utils.common.SpringContextUtils;
 import com.lxl.utils.config.ConfUtil;
 import com.lxl.web.redis.RedisCacheUtils;
@@ -121,7 +121,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @param orderId        顺序消费：要保证同一个orderId任务的所有消息发送到同一个队列上，才能保证FIFO的顺序
      * @return
      */
-    public void sendMsg(String msg, MqTagsEnum tag, boolean isDefault, Integer delayTimeLevel, boolean isBroadcast, String orderId) {
+    public void sendMsg(String msg, TagsEnum tag, boolean isDefault, Integer delayTimeLevel, boolean isBroadcast, String orderId) {
         if (StringUtils.isEmpty(msg)) {
             return;
         }
@@ -175,7 +175,7 @@ public class RocketMqConsumer implements TransactionListener {
     /**
      * 消息发送异常，触发重发机制
      */
-    private void reSendMsg(String msg, MqTagsEnum tag, boolean isDefault, Integer delayTimeLevel, boolean isBroadcast, String orderId) {
+    private void reSendMsg(String msg, TagsEnum tag, boolean isDefault, Integer delayTimeLevel, boolean isBroadcast, String orderId) {
         int interval = Integer.parseInt(ConfUtil.getPropertyOrDefault("mq_retry_interval", "60"));
         executor.schedule(() -> {
             log.warn("消息发送异常，触发重发机制，消息内容：{}", msg);
@@ -190,7 +190,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @param tag
      * @return
      */
-    public void sendMsg(String msg, MqTagsEnum tag) {
+    public void sendMsg(String msg, TagsEnum tag) {
         sendMsg(msg, tag, true, null, false, null);
     }
 
@@ -200,7 +200,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @param msg
      * @param tag
      */
-    public void sendOrderMsg(String msg, MqTagsEnum tag, String orderId) {
+    public void sendOrderMsg(String msg, TagsEnum tag, String orderId) {
         sendMsg(msg, tag, true, null, false, orderId);
     }
 
@@ -212,7 +212,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @param delayTimeLevel 默认1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h
      * @return
      */
-    public void sendDelayMsg(String msg, MqTagsEnum tag, Integer delayTimeLevel) {
+    public void sendDelayMsg(String msg, TagsEnum tag, Integer delayTimeLevel) {
         sendMsg(msg, tag, true, delayTimeLevel, false, null);
     }
 
@@ -223,7 +223,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @param tag
      * @return
      */
-    public void sendTransactionMsg(String msg, MqTagsEnum tag) {
+    public void sendTransactionMsg(String msg, TagsEnum tag) {
         sendMsg(msg, tag, false, null, false, null);
     }
 
@@ -234,7 +234,7 @@ public class RocketMqConsumer implements TransactionListener {
      * @param tag
      * @return
      */
-    public void sendBroadcastMsg(String msg, MqTagsEnum tag) {
+    public void sendBroadcastMsg(String msg, TagsEnum tag) {
         sendMsg(msg, tag, true, null, true, null);
     }
 

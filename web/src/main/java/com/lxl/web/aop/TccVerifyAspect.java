@@ -1,11 +1,14 @@
 package com.lxl.web.aop;
 
+import com.lxl.common.enums.TagsEnum;
 import com.lxl.common.enums.TransactionEnum;
 import com.lxl.web.annotations.TccVerify;
+import com.lxl.web.lock.DistLock;
 import com.lxl.web.redis.RedisCacheUtils;
 import io.seata.core.context.RootContext;
 import io.seata.rm.tcc.api.BusinessActionContext;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -27,9 +30,12 @@ import java.lang.reflect.Method;
 @Aspect
 @Component
 @ConditionalOnBean(RedisCacheUtils.class)
-public class TccTransactionAspect extends AspectBase {
+public class TccVerifyAspect extends AspectBase {
     @Autowired
     private RedisCacheUtils redisCacheUtils;
+
+    @Autowired
+    private DistLock distLock;
 
     @Value("${spring.application.name:}")
     private String applicationName;
@@ -40,6 +46,35 @@ public class TccTransactionAspect extends AspectBase {
     public Object tccVerifyBusiness(ProceedingJoinPoint pjp) throws Throwable {
         Method currentMethod = currentMethod(pjp);
         TccVerify tccVerify = currentMethod.getAnnotation(TccVerify.class);
+        String lock = tccVerify.lockId();
+        TagsEnum tag = tccVerify.lockName();
+        // prepare资源预留阶段，有些业务场景需要考虑并发
+        if (StringUtils.isNotBlank(lock)) {
+            // 需要加锁
+            String lockId = distLock.getLockId(lock, pjp);
+            try {
+                if (distLock.lock(tag.getTagName(), lockId)) {
+                    return doVerify(tccVerify, pjp);
+                }
+            } finally {
+                distLock.unlock(tag.getTagName(), lockId);
+            }
+        } else {
+            // 不需要加锁
+            return doVerify(tccVerify, pjp);
+        }
+        return false;
+    }
+
+    /**
+     * 验证各个阶段
+     *
+     * @param tccVerify
+     * @param pjp
+     * @return
+     * @throws Throwable
+     */
+    private boolean doVerify(TccVerify tccVerify, ProceedingJoinPoint pjp) throws Throwable {
         String txId = RootContext.getXID();
         if (txId == null && pjp.getArgs() != null && pjp.getArgs().length > 0) {
             Object arg = pjp.getArgs()[0];
@@ -68,6 +103,12 @@ public class TccTransactionAspect extends AspectBase {
         return true;
     }
 
+    /**
+     * 验证try阶段 true:继续执行后续业务 false：不执行后续业务，直接返回
+     *
+     * @param txId
+     * @return
+     */
     public boolean prepareVerify(String txId) {
         if (redisCacheUtils.hExists(TCC_XID_CACHE, applicationName + txId)) {
             log.info("分布式事务seata-tcc-prepare验证，检测到事务已回滚，stage：{}，xid：{}", TransactionEnum.PREPARE.getDesc(), txId);
@@ -76,6 +117,12 @@ public class TccTransactionAspect extends AspectBase {
         return true;
     }
 
+    /**
+     * 验证commit阶段 true:继续执行后续业务 false：不执行后续业务，直接返回
+     *
+     * @param txId
+     * @return
+     */
     public boolean commitVerify(String txId) {
         if (!redisCacheUtils.hExists(TCC_XID_CACHE, applicationName + txId)) {
             log.info("分布式事务seata-tcc-commit验证，未检测到事务，stage：{}，xid：{}", TransactionEnum.COMMIT.getDesc(), txId);
@@ -88,6 +135,12 @@ public class TccTransactionAspect extends AspectBase {
         return true;
     }
 
+    /**
+     * 验证rollback阶段 true:继续执行后续业务 false：不执行后续业务，直接返回
+     *
+     * @param txId
+     * @return
+     */
     public boolean rollbackVerify(String txId) {
         if (!redisCacheUtils.hExists(TCC_XID_CACHE, applicationName + txId)) {
             log.info("分布式事务seata-tcc-rollback验证，未检测到事务，stage：{}，xid：{}", TransactionEnum.ROLLBACK.getDesc(), txId);

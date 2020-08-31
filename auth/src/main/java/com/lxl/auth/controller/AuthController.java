@@ -5,7 +5,7 @@ import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.lxl.auth.service.AuthService;
 import com.lxl.auth.vo.LoginRequestInfo;
 import com.lxl.common.enums.CodeEnum;
-import com.lxl.common.enums.MqTagsEnum;
+import com.lxl.common.enums.TagsEnum;
 import com.lxl.common.feign.message.MessageFeign;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.web.annotations.Logined;
@@ -100,7 +100,7 @@ public class AuthController implements ProducerDeal {
 
     @Override
     public boolean supportTag(String tagsEnum) {
-        return MqTagsEnum.TEST.getTagName().equals(tagsEnum);
+        return TagsEnum.TEST.getTagName().equals(tagsEnum);
     }
 
     @Override

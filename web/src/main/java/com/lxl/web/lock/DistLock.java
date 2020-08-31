@@ -1,13 +1,21 @@
 package com.lxl.web.lock;
 
+import cn.hutool.core.util.NumberUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
+import com.lxl.common.enums.CodeEnum;
 import com.lxl.utils.config.ConfUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.locks.InterProcessMultiLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.utils.CloseableUtils;
+import org.aspectj.lang.ProceedingJoinPoint;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -164,5 +172,51 @@ public class DistLock {
         if (this.client != null) {
             CloseableUtils.closeQuietly(this.client);
         }
+    }
+
+    /**
+     * 获取分布式锁lockId
+     *
+     * @param lock 锁参数：#p0.obj.id:第一个参数的obj字段下的id字段值作为lockId
+     * @param pjp  切入点
+     * @return
+     */
+    public String getLockId(String lock, ProceedingJoinPoint pjp) {
+        String lockId = null;
+        if (pjp.getArgs() == null || pjp.getArgs().length == 0 || !lock.contains("#p")) {
+            lockId = lock;
+        } else {
+            String[] arr = lock.split("\\.");
+            String p = arr[0].replace("#p", "");
+            if (!NumberUtil.isNumber(p)) {
+                log.error("分布式锁获取失败：lock-#p参数有误");
+                throw new RuntimeException(CodeEnum.PARAM_ERROR.getMessage());
+            }
+            String arg = JSON.toJSONString(pjp.getArgs()[Integer.parseInt(p)]);
+            try {
+                JSONObject jsonObject = JSON.parseObject(arg);
+                int len = arr.length;
+                if (len > 1) {
+                    // 获取下面的属性 暂不考虑数组情况
+                    for (int i = 1; i < len; i++) {
+                        if (i < len - 1 && !(jsonObject.get(arr[i]) instanceof JSONArray)) {
+                            jsonObject = jsonObject.getJSONObject(arr[i]);
+                        } else {
+                            lockId = JSON.toJSONString(jsonObject.get(arr[i]));
+                        }
+                    }
+                } else {
+                    lockId = jsonObject.toJSONString();
+                }
+            } catch (JSONException e) {
+                // 不是json对象
+                lockId = arg;
+            }
+        }
+        if (StringUtils.isBlank(lockId)) {
+            log.error("分布式锁获取失败：未获取到lockId");
+            throw new RuntimeException(CodeEnum.PARAM_ERROR.getMessage());
+        }
+        return lockId;
     }
 }

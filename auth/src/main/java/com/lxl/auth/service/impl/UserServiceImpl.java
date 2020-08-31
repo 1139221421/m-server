@@ -9,11 +9,10 @@ import com.lxl.auth.vo.LoginRequestInfo;
 import com.lxl.auth.vo.LoginUserInfo;
 import com.lxl.common.constance.Constance;
 import com.lxl.common.entity.auth.User;
-import com.lxl.common.enums.MqTagsEnum;
+import com.lxl.common.enums.TagsEnum;
 import com.lxl.common.enums.TransactionEnum;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.utils.common.PasswordUtil;
-import com.lxl.web.annotations.DisLockDeal;
 import com.lxl.web.annotations.TccVerify;
 import com.lxl.web.elastic.ElasticCustomerOperate;
 import com.lxl.web.support.CrudServiceImpl;
@@ -79,8 +78,7 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
      * @return
      */
     @Override
-    @TccVerify(transaction = TransactionEnum.PREPARE)
-    @DisLockDeal(tag = MqTagsEnum.REDUCE_ACCOUNT_BALANCE, lock = "#p0")
+    @TccVerify(transaction = TransactionEnum.PREPARE, lockName = TagsEnum.REDUCE_ACCOUNT_BALANCE, lockId = "#p0")
     public boolean tccReduceAccountBalancePrepare(Long id, BigDecimal reduce) {
         log.info("分布式事务seata-tcc模拟下单，检查账户余额操作，xid：{}", RootContext.getXID());
         double m = reduce.doubleValue();

@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.lxl.common.entity.order.Order;
-import com.lxl.common.enums.MqTagsEnum;
+import com.lxl.common.enums.TagsEnum;
 import com.lxl.common.enums.TransactionEnum;
 import com.lxl.order.dao.OrderMapper;
 import com.lxl.order.service.IOrderService;
@@ -24,7 +24,7 @@ public class OrderServiceImpl extends CrudServiceImpl<OrderMapper, Order, Long> 
 
     @Override
     public boolean supportTag(String tagsEnum) {
-        return tagsEnum.equals(MqTagsEnum.REDUCE_STOCK.getTagName());
+        return tagsEnum.equals(TagsEnum.REDUCE_STOCK.getTagName());
     }
 
     /**

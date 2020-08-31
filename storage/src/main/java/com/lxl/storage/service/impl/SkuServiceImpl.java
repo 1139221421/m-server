@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.lxl.common.constance.Constance;
 import com.lxl.common.entity.storage.Sku;
-import com.lxl.common.enums.MqTagsEnum;
+import com.lxl.common.enums.TagsEnum;
 import com.lxl.common.enums.TransactionEnum;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.storage.dao.SkuMapper;
@@ -43,8 +43,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
      * @return
      */
     @Override
-    @DisLockDeal(tag = MqTagsEnum.REDUCE_STOCK, lock = "#p0")
-    @TccVerify(transaction = TransactionEnum.PREPARE)
+    @TccVerify(transaction = TransactionEnum.PREPARE, lockName = TagsEnum.REDUCE_STOCK, lockId = "#p0")
     public boolean tccReduceStockPrepare(Long id, Integer num) {
         log.info("分布式事务seata-tcc模拟下单，检查库存操作，xid：{}", RootContext.getXID());
         Integer stock = redisCacheUtils.hGet(Constance.Storage.STOCK, id.toString(), Integer.class);
@@ -83,7 +82,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
 
     @Override
     public boolean supportTag(String tagsEnum) {
-        return tagsEnum.equals(MqTagsEnum.REDUCE_STOCK.getTagName());
+        return tagsEnum.equals(TagsEnum.REDUCE_STOCK.getTagName());
     }
 
     /**

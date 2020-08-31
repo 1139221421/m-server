@@ -3,7 +3,6 @@ package com.lxl.web.aop;
 import com.alibaba.fastjson.JSON;
 import com.lxl.common.entity.log.Log;
 import com.lxl.common.enums.LogTypeEnum;
-import com.lxl.common.enums.MqTagsEnum;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.web.mq.RocketMqConsumer;
 import com.lxl.web.utils.HttpServletUtils;

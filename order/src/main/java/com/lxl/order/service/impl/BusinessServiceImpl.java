@@ -4,7 +4,7 @@ import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.lxl.common.entity.order.Order;
-import com.lxl.common.enums.MqTagsEnum;
+import com.lxl.common.enums.TagsEnum;
 import com.lxl.common.feign.auth.AuthFeign;
 import com.lxl.common.feign.storage.StorageFeign;
 import com.lxl.common.vo.ResponseInfo;
@@ -46,7 +46,7 @@ public class BusinessServiceImpl implements IBusinessService {
         jsonObject.put("skuId", 1L);
         jsonObject.put("orderNum", UUID.fastUUID().toString(true));
         jsonObject.put("reduceStock", 1);
-        rocketMqConsumer.sendTransactionMsg(JSON.toJSONString(jsonObject), MqTagsEnum.REDUCE_STOCK);
+        rocketMqConsumer.sendTransactionMsg(JSON.toJSONString(jsonObject), TagsEnum.REDUCE_STOCK);
         return ResponseInfo.createSuccess();
     }
 

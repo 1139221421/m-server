@@ -1,10 +1,5 @@
 package com.lxl.web.aop;
 
-import cn.hutool.core.util.NumberUtil;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONException;
-import com.alibaba.fastjson.JSONObject;
 import com.lxl.common.enums.CodeEnum;
 import com.lxl.web.annotations.DisLockDeal;
 import com.lxl.web.lock.DistLock;
@@ -34,46 +29,11 @@ public class DisLockAspect extends AspectBase {
         Method currentMethod = currentMethod(pjp);
         DisLockDeal disLockDeal = currentMethod.getAnnotation(DisLockDeal.class);
         String lock = disLockDeal.lock();
-        if (StringUtils.isEmpty(lock)) {
+        if (StringUtils.isBlank(lock)) {
             log.error("分布式锁获取失败：lock为空");
             throw new RuntimeException(CodeEnum.PARAM_ERROR.getMessage());
         }
-        String lockId = null;
-        if (pjp.getArgs() == null || pjp.getArgs().length == 0 || !lock.contains("#p")) {
-            lockId = lock;
-        } else {
-            String[] arr = lock.split("\\.");
-            String p = arr[0].replace("#p", "");
-            if (!NumberUtil.isNumber(p)) {
-                log.error("分布式锁获取失败：lock-#p参数有误");
-                throw new RuntimeException(CodeEnum.PARAM_ERROR.getMessage());
-            }
-            String arg = JSON.toJSONString(pjp.getArgs()[Integer.parseInt(p)]);
-            try {
-                JSONObject jsonObject = JSON.parseObject(arg);
-                int len = arr.length;
-                if (len > 1) {
-                    // 获取下面的属性 暂不考虑数组情况
-                    for (int i = 1; i < len; i++) {
-                        if (i < len - 1 && !(jsonObject.get(arr[i]) instanceof JSONArray)) {
-                            jsonObject = jsonObject.getJSONObject(arr[i]);
-                        } else {
-                            lockId = JSON.toJSONString(jsonObject.get(arr[i]));
-                        }
-                    }
-                } else {
-                    lockId = jsonObject.toJSONString();
-                }
-            } catch (JSONException e) {
-                // 不是json对象
-                lockId = arg;
-            }
-        }
-        if (StringUtils.isEmpty(lockId)) {
-            log.error("分布式锁获取失败：未获取到lockId");
-            throw new RuntimeException(CodeEnum.PARAM_ERROR.getMessage());
-        }
-
+        String lockId = distLock.getLockId(lock, pjp);
         try {
             if (distLock.lock(disLockDeal.tag().getTagName(), lockId)) {
                 return pjp.proceed();
