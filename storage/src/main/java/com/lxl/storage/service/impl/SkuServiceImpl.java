@@ -5,10 +5,12 @@ import com.alibaba.fastjson.JSONObject;
 import com.lxl.common.constance.Constance;
 import com.lxl.common.entity.storage.Sku;
 import com.lxl.common.enums.MqTagsEnum;
+import com.lxl.common.enums.TransactionEnum;
 import com.lxl.common.vo.ResponseInfo;
 import com.lxl.storage.dao.SkuMapper;
 import com.lxl.storage.service.ISkuService;
 import com.lxl.web.annotations.DisLockDeal;
+import com.lxl.web.annotations.TccVerify;
 import com.lxl.web.mq.ConsumerDeal;
 import com.lxl.web.support.CrudServiceImpl;
 import io.seata.core.context.RootContext;
@@ -42,6 +44,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
      */
     @Override
     @DisLockDeal(tag = MqTagsEnum.REDUCE_STOCK, lock = "#p0")
+    @TccVerify(transaction = TransactionEnum.PREPARE)
     public boolean tccReduceStockPrepare(Long id, Integer num) {
         log.info("分布式事务seata-tcc模拟下单，检查库存操作，xid：{}", RootContext.getXID());
         Integer stock = redisCacheUtils.getCacheObject(Constance.Storage.STOCK + id, Integer.class);
@@ -59,6 +62,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
     }
 
     @Override
+    @TccVerify(transaction = TransactionEnum.COMMIT)
     public boolean tccReduceStockCommit(BusinessActionContext actionContext) {
         Long id = Long.valueOf(actionContext.getActionContext("id").toString());
         Integer num = (Integer) actionContext.getActionContext("num");
@@ -68,6 +72,7 @@ public class SkuServiceImpl extends CrudServiceImpl<SkuMapper, Sku, Long> implem
     }
 
     @Override
+    @TccVerify(transaction = TransactionEnum.ROLLBACK)
     public boolean tccReduceStockRollback(BusinessActionContext actionContext) {
         Long id = Long.valueOf(actionContext.getActionContext("id").toString());
         Integer num = (Integer) actionContext.getActionContext("num");
