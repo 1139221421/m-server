@@ -5,12 +5,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -34,7 +32,7 @@ public class RedisCacheUtils {
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
-    @Resource
+    @Resource(name = "jedisFactory")
     private RedisConnectionFactory redisConnectionFactory;
 
     public RedisTemplate getRedisTemplate() {
@@ -71,18 +69,13 @@ public class RedisCacheUtils {
     public boolean setCacheObject(String key, Object value, long seconds) {
         logger.debug("存入缓存 key:" + key);
         RedisTemplate template = getRedisSerializer(value.getClass());
-        try {
-            ValueOperations<String, Object> operation = template.opsForValue();
-            if (seconds > 0) {
-                operation.set(key, value, seconds, TimeUnit.SECONDS);
-            } else {
-                operation.set(key, value);
-            }
-            return true;
-        } catch (Exception ex) {
-            logger.error("redis exception:", ex);
-            return false;
+        ValueOperations<String, Object> operation = template.opsForValue();
+        if (seconds > 0) {
+            operation.set(key, value, seconds, TimeUnit.SECONDS);
+        } else {
+            operation.set(key, value);
         }
+        return true;
     }
 
     /**
@@ -96,16 +89,11 @@ public class RedisCacheUtils {
     public boolean setIfAbsent(String key, Object value, long seconds) {
         logger.debug("存入缓存 key且key不存在:" + key);
         RedisTemplate template = getRedisSerializer(value.getClass());
-        try {
-            ValueOperations<String, Object> operation = template.opsForValue();
-            if (seconds > 0) {
-                return operation.setIfAbsent(key, value, seconds, TimeUnit.SECONDS);
-            } else {
-                return operation.setIfAbsent(key, value);
-            }
-        } catch (Exception ex) {
-            logger.error("redis exception:", ex);
-            return false;
+        ValueOperations<String, Object> operation = template.opsForValue();
+        if (seconds > 0) {
+            return operation.setIfAbsent(key, value, seconds, TimeUnit.SECONDS);
+        } else {
+            return operation.setIfAbsent(key, value);
         }
     }
 
@@ -357,6 +345,23 @@ public class RedisCacheUtils {
     }
 
     /**
+     * 获取指定类型hash值
+     *
+     * @param key
+     * @param field
+     * @return
+     */
+    public <K, HK, HV> HV hGet(K key, HK field, Class<HV> clazz) {
+        RedisTemplate template = getRedisSerializer(clazz);
+        HashOperations<K, HK, HV> operation = template.opsForHash();
+        Object object = operation.get(key, field);
+        if (object != null) {
+            return (HV) object;
+        }
+        return null;
+    }
+
+    /**
      * 判断是否是set的一员
      *
      * @param key
@@ -387,18 +392,12 @@ public class RedisCacheUtils {
     public <T> T getCacheObject(String key, Class<T> clazz) {
         logger.debug("获取缓存 key:" + key);
         RedisTemplate template = getRedisSerializer(clazz);
-        try {
-            ValueOperations<String, T> operation = template.opsForValue();
-            Object object = operation.get(key);
-            T result = null;
-            if (object != null) {
-                result = (T) object;
-            }
-            return result;
-        } catch (Exception ex) {
-            logger.error("redis exception:", ex);
-            return null;
+        ValueOperations<String, T> operation = template.opsForValue();
+        Object object = operation.get(key);
+        if (object != null) {
+            return (T) object;
         }
+        return null;
     }
 
     private <T> RedisTemplate getRedisSerializer(Class<T> clazz) {
@@ -415,6 +414,9 @@ public class RedisCacheUtils {
         }
         RedisTemplate template = new StringRedisTemplate(redisConnectionFactory);
         template.setValueSerializer(redisSerializer);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(redisSerializer);
         return template;
     }
 }

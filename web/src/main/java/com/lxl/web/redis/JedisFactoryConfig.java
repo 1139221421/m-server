@@ -69,6 +69,8 @@ public class JedisFactoryConfig extends CachingConfigurerSupport {
         }
         template.setValueSerializer(redisSerializer);
         template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(redisSerializer);
         return template;
     }
 
