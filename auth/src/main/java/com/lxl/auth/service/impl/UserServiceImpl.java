@@ -84,7 +84,7 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
     public boolean tccReduceAccountBalancePrepare(Long id, BigDecimal reduce) {
         log.info("分布式事务seata-tcc模拟下单，检查账户余额操作，xid：{}", RootContext.getXID());
         double m = reduce.doubleValue();
-        Double balance = redisCacheUtils.getCacheObject(Constance.User.ACCOUNT_BALANCE + id, Double.class);
+        Double balance = redisCacheUtils.hGet(Constance.User.ACCOUNT_BALANCE, id.toString(), Double.class);
         if (balance == null) {
             // 初始化账户余额
             balance = initAccountBalance(id);
@@ -94,7 +94,7 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
             throw new RuntimeException("账户余额不足");
         }
         // 冻结账户余额
-        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE + id, -m);
+        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id.toString(), -m);
         return true;
     }
 
@@ -113,7 +113,7 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
     public boolean tccReduceAccountBalanceRollback(BusinessActionContext actionContext) {
         Long id = Long.valueOf(actionContext.getActionContext("id").toString());
         BigDecimal reduce = new BigDecimal(actionContext.getActionContext("reduce").toString());
-        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE + id, reduce.doubleValue());
+        redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id.toString(), reduce.doubleValue());
         log.info("分布式事务seata-tcc模拟下单失败，回滚账户余额操作，xid：{}", actionContext.getXid());
         return true;
     }
@@ -126,7 +126,7 @@ public class UserServiceImpl extends CrudServiceImpl<UserMapper, User, Long> imp
     private Double initAccountBalance(Long id) {
         User user = findById(id);
         if (user != null) {
-            redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE + id, user.getAccountBalance().doubleValue());
+            redisCacheUtils.hIncrBy(Constance.User.ACCOUNT_BALANCE, id.toString(), user.getAccountBalance().doubleValue());
             return user.getAccountBalance().doubleValue();
         }
         return null;

@@ -1,40 +1,39 @@
 package com.lxl.order.controller;
 
-import com.lxl.common.entity.order.Order;
 import com.lxl.common.vo.ResponseInfo;
-import com.lxl.order.service.IOrderService;
-import com.lxl.web.support.BaseCrudController;
+import com.lxl.order.service.IBusinessService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @Controller
-@RequestMapping("/order")
-public class OrderController extends BaseCrudController<Order, IOrderService, Long> {
+@RequestMapping("/business")
+public class BusinessController {
     @Autowired
-    private IOrderService orderService;
-
-    @Override
-    protected IOrderService getService() {
-        return orderService;
-    }
+    private IBusinessService businessService;
 
     @ResponseBody
     @GetMapping("/mqCreateOrder")
     public ResponseInfo mqCreateOrder() {
-        return orderService.mqCreateOrder();
+        return businessService.mqCreateOrder();
     }
 
     @ResponseBody
     @GetMapping("/atCreateOrder")
     public ResponseInfo atCreateOrder() {
-        return orderService.atCreateOrder();
+        return businessService.atCreateOrder();
     }
 
     @ResponseBody
     @GetMapping("/tccCreateOrder")
     public ResponseInfo tccCreateOrder() {
-        return orderService.tccCreateOrder();
+        return businessService.tccCreateOrder();
+    }
+
+    @ResponseBody
+    @GetMapping("/sagaCreateOrder")
+    public ResponseInfo sagaCreateOrder() {
+        return businessService.sagaCreateOrder();
     }
 
 }
