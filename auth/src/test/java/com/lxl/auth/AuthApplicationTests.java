@@ -5,6 +5,7 @@ import com.lxl.auth.elastic.UserRepository;
 import com.lxl.auth.service.IUserService;
 import com.lxl.common.entity.auth.User;
 import com.lxl.web.elastic.ElasticCustomerOperate;
+import com.lxl.web.redis.RedisCacheUtils;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -49,6 +50,14 @@ public class AuthApplicationTests extends BaseTest {
 
     @Autowired
     private RestHighLevelClient restHighLevelClient;
+
+    @Autowired
+    private RedisCacheUtils redisCacheUtils;
+
+    @Test
+    public void clearCache() {
+        redisCacheUtils.clear("*");
+    }
 
     /**
      * 数据同步

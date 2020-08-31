@@ -125,8 +125,8 @@ public class RedisCacheUtils {
             RedisOperations<String, Object> redisOperations = valueOper.getOperations();
             redisOperations.keys(pattern);
             Set<String> keys = redisOperations.keys(pattern);
-            for (String key : keys) {
-                redisOperations.delete(key);
+            if (keys != null && !keys.isEmpty()) {
+                redisOperations.delete(keys);
             }
         } catch (Exception ex) {
             logger.error("redis exception:", ex);
