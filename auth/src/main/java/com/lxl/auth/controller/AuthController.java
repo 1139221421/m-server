@@ -14,6 +14,7 @@ import com.lxl.web.annotations.Log;
 import com.lxl.web.mq.ProducerDeal;
 import com.lxl.web.mq.RocketMqConsumer;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import io.swagger.annotations.Api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import static com.lxl.web.utils.HttpServletUtils.getRequest;
 
+@Api(value = "auth")
 @RestController
 @RequestMapping("/auth")
 public class AuthController implements ProducerDeal {
